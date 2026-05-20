@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 
 export type ProFinding = {
   category: string;
@@ -17,18 +17,17 @@ export type ProAnalysisResult = {
 
 export class AnthropicSetupError extends Error {
   constructor() {
-    super("ANTHROPIC_API_KEY is required for Pro analysis.");
+    super("GROQ_API_KEY is required for Pro analysis.");
     this.name = "AnthropicSetupError";
   }
 }
 
-export function anthropicClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+export function anthropicClient(): Groq {
+  const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) {
     throw new AnthropicSetupError();
   }
-
-  return new Anthropic({ apiKey });
+  return new Groq({ apiKey });
 }
 
 function normalizeFinding(finding: unknown, index: number): ProFinding | null {
@@ -88,38 +87,10 @@ function stripControlChars(value: string): string {
       out += value[i];
     }
   }
-
   return out;
 }
 
 const proAnalysisToolName = "submit_pro_analysis";
-
-const proAnalysisToolSchema = {
-  additionalProperties: false,
-  properties: {
-    findings: {
-      items: {
-        additionalProperties: false,
-        properties: {
-          category: { type: "string" },
-          description: { type: "string" },
-          evidence: { type: "string" },
-          id: { type: "string" },
-          remediation: { type: "string" },
-          severity: { enum: ["low", "medium", "high"], type: "string" },
-          title: { type: "string" }
-        },
-        required: ["id", "title", "severity", "category", "description", "evidence", "remediation"],
-        type: "object"
-      },
-      maxItems: 8,
-      type: "array"
-    },
-    summary: { type: "string" }
-  },
-  required: ["summary", "findings"],
-  type: "object"
-} as const;
 
 const systemPrompt = [
   "You are Web Launch Guard, a defensive SaaS launch security reviewer.",
@@ -151,46 +122,67 @@ export async function generateProAnalysis(input: {
   };
 
   const client = anthropicClient();
-  const model = process.env.ANTHROPIC_MODEL?.trim() || "claude-sonnet-4-6";
+  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
 
-  // Forced tool_choice gives us a structured-output channel: the model must
-  // call submit_pro_analysis exactly once with arguments matching the JSON
-  // schema. We then parse block.input directly.
-  const message = await client.messages.create({
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 4096,
-    // Cache the (frozen) system prompt + tool schema. Subsequent requests
-    // with identical prefixes pay ~0.1x for the cached portion.
-    system: [
-      {
-        type: "text",
-        text: systemPrompt,
-        cache_control: { type: "ephemeral" }
-      }
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: JSON.stringify(wrappedInput) }
     ],
     tools: [
       {
-        name: proAnalysisToolName,
-        description: "Return the Pro analysis findings and summary as structured data.",
-        input_schema: proAnalysisToolSchema
+        type: "function",
+        function: {
+          name: proAnalysisToolName,
+          description: "Return the Pro analysis findings and summary as structured data.",
+          parameters: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              findings: {
+                type: "array",
+                maxItems: 8,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    category: { type: "string" },
+                    description: { type: "string" },
+                    evidence: { type: "string" },
+                    id: { type: "string" },
+                    remediation: { type: "string" },
+                    severity: { type: "string", enum: ["low", "medium", "high"] },
+                    title: { type: "string" }
+                  },
+                  required: ["id", "title", "severity", "category", "description", "evidence", "remediation"]
+                }
+              },
+              summary: { type: "string" }
+            },
+            required: ["summary", "findings"]
+          }
+        }
       }
     ],
-    tool_choice: { type: "tool", name: proAnalysisToolName },
-    messages: [
-      {
-        role: "user",
-        content: JSON.stringify(wrappedInput)
-      }
-    ]
+    tool_choice: { type: "function", function: { name: proAnalysisToolName } }
   });
 
-  const toolUse = message.content.find(
-    (block): block is Anthropic.ToolUseBlock => block.type === "tool_use" && block.name === proAnalysisToolName
+  const toolCall = response.choices[0]?.message?.tool_calls?.find(
+    (tc) => tc.function.name === proAnalysisToolName
   );
 
-  if (!toolUse) {
+  if (!toolCall) {
     throw new Error("Model did not return the expected structured output.");
   }
 
-  return parseProAnalysisOutput(toolUse.input);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(toolCall.function.arguments);
+  } catch {
+    throw new Error("Model returned malformed JSON in tool call.");
+  }
+
+  return parseProAnalysisOutput(parsed);
 }
