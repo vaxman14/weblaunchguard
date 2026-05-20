@@ -71,6 +71,7 @@ export async function handler(event: NetlifyEvent) {
     const customerId = await existingStripeCustomerId(authResult.user.id);
 
     const session = await stripeClient().checkout.sessions.create({
+      allow_promotion_codes: true,
       cancel_url: `${siteUrl}/dashboard?billing=cancelled`,
       client_reference_id: authResult.user.id,
       customer: customerId || undefined,
