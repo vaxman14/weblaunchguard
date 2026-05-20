@@ -143,13 +143,21 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
       </main>
 
       <footer className="border-t border-line/80 bg-panel/70">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <p>
-            Web Launch Guard is operated by <span>CTFDigital</span>.
-          </p>
-          <a className="font-semibold text-ink hover:text-accent" href="https://ctfdigital.store">
-            ctfdigital.store
-          </a>
+        <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted">
+              © 2026 CTFDigital. Web Launch Guard.
+            </p>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <a className="text-muted hover:text-accent" href="#privacy">Privacy Policy</a>
+              <a className="text-muted hover:text-accent" href="#terms">Terms of Service</a>
+              <a className="text-muted hover:text-accent" href="#eula">EULA</a>
+              <a className="text-muted hover:text-accent" href="#cookies">Cookie Policy</a>
+              <a className="font-semibold text-ink hover:text-accent" href="https://ctfdigital.store" target="_blank" rel="noopener noreferrer">
+                ctfdigital.store
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </>

@@ -70,3 +70,46 @@ select {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Accessibility widget overrides */
+:root[data-a11y-font-size="large"] {
+  font-size: 18px;
+}
+
+:root[data-a11y-font-size="xl"] {
+  font-size: 21px;
+}
+
+:root[data-a11y-motion="reduce"] *,
+:root[data-a11y-motion="reduce"] *::before,
+:root[data-a11y-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+:root[data-a11y-contrast="high"] {
+  --color-ink: 0 0 0;
+  --color-page: 255 255 255;
+  --color-muted: 30 30 30;
+  --color-panel: 255 255 255;
+  --color-line: 0 0 0;
+  --color-accent: 0 0 180;
+}
+
+:root[data-theme="dark"][data-a11y-contrast="high"] {
+  --color-ink: 255 255 255;
+  --color-page: 0 0 0;
+  --color-muted: 220 220 220;
+  --color-panel: 15 15 15;
+  --color-line: 255 255 255;
+  --color-accent: 100 180 255;
+}
+
+:root[data-a11y-dyslexic="true"] {
+  font-family: "OpenDyslexic", "Comic Sans MS", "Arial", ui-sans-serif, sans-serif;
+  letter-spacing: 0.05em;
+  word-spacing: 0.1em;
+  line-height: 1.8;
+}

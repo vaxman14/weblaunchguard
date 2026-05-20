@@ -40,7 +40,8 @@ export function CookieBanner() {
     >
       <p className="max-w-2xl text-sm leading-6 text-muted">
         Web Launch Guard uses functional cookies and local preferences to remember your theme, cookie
-        acknowledgement, and signed-in session. We do not add marketing cookies by default.
+        acknowledgement, and signed-in session. We do not add marketing cookies by default.{" "}
+        <a className="underline hover:text-accent" href="#cookies">Cookie Policy</a>.
       </p>
       <Button className="shrink-0" onClick={accept}>
         Accept

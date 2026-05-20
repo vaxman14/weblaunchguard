@@ -32,10 +32,11 @@ type ReportListRow = {
 };
 
 type DashboardPageProps = {
+  onAdminOpen?: () => void;
   onReportOpen?: (reportId: string) => void;
 };
 
-export function DashboardPage({ onReportOpen }: DashboardPageProps = {}) {
+export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps = {}) {
   const { session, signOut, user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [domains, setDomains] = useState<DomainRow[]>([]);
@@ -46,6 +47,7 @@ export function DashboardPage({ onReportOpen }: DashboardPageProps = {}) {
   const [scanLoading, setScanLoading] = useState(false);
   const [proLoading, setProLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const verifiedDomains = useMemo(
     () => domains.filter((domain) => domain.verification_status === "verified"),
@@ -118,7 +120,16 @@ export function DashboardPage({ onReportOpen }: DashboardPageProps = {}) {
     void loadSubscriptions();
     void loadDomains();
     void loadReports();
-  }, [loadSubscriptions, loadDomains, loadReports]);
+
+    if (supabase && user?.id) {
+      supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(({ data }) => setIsAdmin(Boolean(data?.is_admin)));
+    }
+  }, [loadSubscriptions, loadDomains, loadReports, user?.id]);
 
   useEffect(() => {
     if (verifiedDomains.length === 0) {
@@ -220,6 +231,11 @@ export function DashboardPage({ onReportOpen }: DashboardPageProps = {}) {
               {activeSubscriptions.length} active subscription{activeSubscriptions.length === 1 ? "" : "s"}
             </span>
             <ThemeToggle />
+            {isAdmin && onAdminOpen && (
+              <Button className="min-h-10 px-3" onClick={onAdminOpen} variant="ghost">
+                Admin
+              </Button>
+            )}
             <Button className="min-h-10 px-3" onClick={signOut} variant="ghost">
               Sign out
             </Button>

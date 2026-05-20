@@ -171,6 +171,17 @@ async function recordSubscriptionChange(record: SubscriptionRecord | null) {
     id: record.userId
   });
 
+  const { data: existingSub } = await client
+    .from("subscriptions")
+    .select("manual_override")
+    .eq("stripe_subscription_id", record.stripeSubscriptionId)
+    .maybeSingle();
+
+  if (existingSub?.manual_override) {
+    console.log("stripe-webhook: skipping admin-assigned manual override subscription", record.stripeSubscriptionId);
+    return { persisted: false, record };
+  }
+
   const { error } = await client.from("subscriptions").upsert(
     {
       billing_interval: record.interval,
