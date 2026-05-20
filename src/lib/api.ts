@@ -195,6 +195,76 @@ export async function createPortalSession(input: AuthRequest): Promise<{ url: st
   return readJson<{ url: string }>(response, "Customer Portal session creation failed.");
 }
 
+export type DemoScanResponse = {
+  findings: ScanFinding[];
+  finalUrl: string;
+  generatedAt: string;
+  riskScore: number;
+  summary: string;
+  totalFindings: number;
+};
+
+export async function runDemoScan(url: string): Promise<DemoScanResponse> {
+  const response = await fetch("/.netlify/functions/demo-scan", {
+    body: JSON.stringify({ url }),
+    headers: { "content-type": "application/json" },
+    method: "POST"
+  });
+
+  return readJson<DemoScanResponse>(response, "Demo scan failed.");
+}
+
+export async function createShareToken(input: AuthRequest & { reportId: string }): Promise<{ share_token: string }> {
+  const response = await fetch("/.netlify/functions/share-report", {
+    body: JSON.stringify({ action: "create", reportId: input.reportId }),
+    headers: authHeaders(input.accessToken),
+    method: "POST"
+  });
+
+  return readJson<{ share_token: string }>(response, "Failed to create share link.");
+}
+
+export async function revokeShareToken(input: AuthRequest & { reportId: string }): Promise<{ ok: boolean }> {
+  const response = await fetch("/.netlify/functions/share-report", {
+    body: JSON.stringify({ action: "revoke", reportId: input.reportId }),
+    headers: authHeaders(input.accessToken),
+    method: "POST"
+  });
+
+  return readJson<{ ok: boolean }>(response, "Failed to revoke share link.");
+}
+
+export type PublicReportResponse = {
+  domain: { hostname: string } | null;
+  findings: Array<{
+    category: string | null;
+    description: string | null;
+    evidence: { note?: string } | null;
+    id: string;
+    remediation: string | null;
+    severity: "low" | "medium" | "high" | null;
+    title: string;
+  }>;
+  report: {
+    created_at: string;
+    domain_id: string;
+    id: string;
+    payload: { soc2?: Soc2Checklist } | null;
+    scan_type: string | null;
+    score: number | null;
+    summary: string | null;
+    target_url: string | null;
+  };
+};
+
+export async function fetchPublicReport(shareToken: string): Promise<PublicReportResponse> {
+  const response = await fetch(`/.netlify/functions/public-report?token=${encodeURIComponent(shareToken)}`, {
+    method: "GET"
+  });
+
+  return readJson<PublicReportResponse>(response, "Report not found.");
+}
+
 export async function exportReportPdf(input: AuthRequest & { reportId: string }): Promise<Blob> {
   const response = await fetch("/.netlify/functions/export-report", {
     body: JSON.stringify({ reportId: input.reportId }),

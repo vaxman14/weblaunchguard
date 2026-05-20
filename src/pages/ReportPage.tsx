@@ -1,11 +1,13 @@
-import { Download, LockKeyhole } from "lucide-react";
+import { Copy, Download, Link, LockKeyhole, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { FindingList } from "../features/scans/FindingList";
 import { Soc2Checklist } from "../features/scans/Soc2Checklist";
 import {
+  createShareToken,
   exportReportPdf,
+  revokeShareToken,
   type ScanFinding,
   type Soc2Checklist as Soc2ChecklistType
 } from "../lib/api";
@@ -49,6 +51,9 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -63,7 +68,7 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
     (async () => {
       const { data: reportData, error: reportError } = await supabase!
         .from("reports")
-        .select("id,target_url,scan_type,summary,score,domain_id,payload,created_at")
+        .select("id,target_url,scan_type,summary,score,domain_id,payload,created_at,share_token")
         .eq("id", reportId)
         .maybeSingle();
 
@@ -77,7 +82,9 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
         return;
       }
 
-      setReport(reportData as ReportRow);
+      const reportRow = reportData as ReportRow & { share_token?: string | null };
+      setReport(reportRow);
+      setShareToken(reportRow.share_token ?? null);
 
       const [findingsResult, domainResult] = await Promise.all([
         supabase!
@@ -115,6 +122,45 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
       }))
       .sort((left, right) => severityRank[left.severity] - severityRank[right.severity]);
   }, [findings]);
+
+  function shareUrl(token: string) {
+    return `${window.location.origin}${window.location.pathname}?share=${token}`;
+  }
+
+  async function handleShare() {
+    if (!report) return;
+    setShareLoading(true);
+    setError(null);
+    try {
+      const { share_token } = await createShareToken({ accessToken, reportId: report.id });
+      setShareToken(share_token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create share link.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  async function handleRevoke() {
+    if (!report) return;
+    setShareLoading(true);
+    setError(null);
+    try {
+      await revokeShareToken({ accessToken, reportId: report.id });
+      setShareToken(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to revoke share link.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!shareToken) return;
+    void navigator.clipboard.writeText(shareUrl(shareToken));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function handleExport() {
     setError(null);
@@ -184,6 +230,50 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
                   <Download aria-hidden="true" size={18} />
                   {exporting ? "Exporting" : "Export PDF"}
                 </Button>
+
+                <div className="mt-4 border-t border-line pt-4">
+                  <p className="mb-2 text-xs font-semibold text-muted uppercase tracking-[0.12em]">Share</p>
+                  {shareToken ? (
+                    <>
+                      <div className="flex items-center gap-2 rounded-lg border border-line bg-page px-3 py-2">
+                        <input
+                          aria-label="Share link"
+                          className="min-w-0 flex-1 bg-transparent text-xs text-muted focus:outline-none"
+                          readOnly
+                          value={shareUrl(shareToken)}
+                        />
+                        <button
+                          aria-label="Copy link"
+                          className="shrink-0 text-muted hover:text-ink"
+                          onClick={handleCopy}
+                          type="button"
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                      {copied && <p className="mt-1 text-xs text-accent">Copied!</p>}
+                      <button
+                        className="mt-2 flex items-center gap-1 text-xs text-muted hover:text-ink"
+                        disabled={shareLoading}
+                        onClick={handleRevoke}
+                        type="button"
+                      >
+                        <X size={12} />
+                        {shareLoading ? "Revoking…" : "Revoke link"}
+                      </button>
+                    </>
+                  ) : (
+                    <Button
+                      className="w-full"
+                      disabled={shareLoading}
+                      onClick={handleShare}
+                      variant="secondary"
+                    >
+                      <Link aria-hidden="true" size={14} />
+                      {shareLoading ? "Creating link…" : "Create share link"}
+                    </Button>
+                  )}
+                </div>
               </Card>
             </section>
 

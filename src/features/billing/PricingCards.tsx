@@ -22,7 +22,7 @@ type Plan = {
 const plans: Plan[] = [
   {
     annualPricePerMonth: 19,
-    cta: "Choose Basic",
+    cta: "Start Basic scan",
     description: "Per-domain SOC 2-aligned launch checks. Each subscription covers one verified domain.",
     features: [
       "1 verified domain per subscription",
@@ -37,7 +37,7 @@ const plans: Plan[] = [
   },
   {
     annualPricePerMonth: 99,
-    cta: "Choose Pro",
+    cta: "Get AI review",
     description: "AI launch reviews and controlled live inspection across up to 3 domains.",
     features: [
       "Up to 3 verified domains",
@@ -53,7 +53,7 @@ const plans: Plan[] = [
   },
   {
     annualPricePerMonth: 349,
-    cta: "Choose Enterprise",
+    cta: "Scale to Enterprise",
     description: "Higher-volume reviews and broader domain coverage for SaaS platforms approaching audit.",
     features: [
       "Up to 10 verified domains",
@@ -96,8 +96,8 @@ export function PricingCards({ accessToken, enableCheckout = false }: PricingCar
       <div className="mb-5 flex items-center justify-center gap-2 rounded-full border border-line bg-page p-1">
         <button
           aria-pressed={interval === "monthly"}
-          className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-            interval === "monthly" ? "bg-accent text-ink" : "text-muted hover:text-ink"
+          className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+            interval === "monthly" ? "bg-ink text-page shadow-sm" : "text-muted hover:text-ink"
           }`}
           onClick={() => setInterval("monthly")}
           type="button"
@@ -106,8 +106,8 @@ export function PricingCards({ accessToken, enableCheckout = false }: PricingCar
         </button>
         <button
           aria-pressed={interval === "annual"}
-          className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-            interval === "annual" ? "bg-accent text-ink" : "text-muted hover:text-ink"
+          className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+            interval === "annual" ? "bg-ink text-page shadow-sm" : "text-muted hover:text-ink"
           }`}
           onClick={() => setInterval("annual")}
           type="button"
