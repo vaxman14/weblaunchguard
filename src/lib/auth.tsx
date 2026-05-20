@@ -59,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(nextSession);
       setAuthError(null);
       setLoading(false);
+
+      if (window.location.hash.includes("access_token=")) {
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      }
     });
 
     return () => {
