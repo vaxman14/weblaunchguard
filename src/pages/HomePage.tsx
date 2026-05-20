@@ -172,17 +172,19 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
                     </div>
                   </div>
                   <FindingList findings={demoResult.findings} />
-                  {demoResult.totalFindings > demoResult.findings.length ? (
-                    <p className="mt-4 text-sm text-muted">
-                      Showing {demoResult.findings.length} of {demoResult.totalFindings} findings.{" "}
-                      <button className="font-semibold text-accent hover:text-accent-strong" onClick={onAuthOpen} type="button">
-                        Sign up for the full report →
-                      </button>
+                  <div className="mt-5 rounded-lg border border-accent/30 bg-accent/5 p-4">
+                    <p className="text-sm font-semibold text-ink">
+                      {demoResult.totalFindings > demoResult.findings.length
+                        ? `Showing ${demoResult.findings.length} of ${demoResult.totalFindings} findings.`
+                        : "This is a preview — your full report includes detailed remediation steps and a SOC 2-aligned checklist."}
                     </p>
-                  ) : null}
-                  <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                    <Button onClick={onAuthOpen}>Get full report</Button>
-                    <Button onClick={onSampleReport} variant="secondary">See sample report</Button>
+                    <p className="mt-1 text-sm text-muted">
+                      Create a free account to unlock the complete report, track fixes, and share a public link with your team.
+                    </p>
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                      <Button onClick={onAuthOpen}>Get full report — it's free</Button>
+                      <Button onClick={onSampleReport} variant="secondary">See a sample first</Button>
+                    </div>
                   </div>
                 </>
               ) : null}
