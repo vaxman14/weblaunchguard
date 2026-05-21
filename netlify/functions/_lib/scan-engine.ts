@@ -115,7 +115,7 @@ function requestBoundUrl(url: URL, boundAddress: BoundAddress): Promise<FetchedR
       {
         headers: {
           accept: "text/html,application/xhtml+xml",
-          "user-agent": "WebLaunchGuard/0.2 passive-check"
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         },
         lookup: (_hostname, _options, callback) => {
           callback(null, boundAddress.address, boundAddress.family);
