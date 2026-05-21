@@ -117,8 +117,15 @@ function requestBoundUrl(url: URL, boundAddress: BoundAddress): Promise<FetchedR
           accept: "text/html,application/xhtml+xml",
           "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         },
-        lookup: (_hostname, _options, callback) => {
-          callback(null, boundAddress.address, boundAddress.family);
+        lookup: (_hostname, options, callback) => {
+          if (options.all) {
+            (callback as (err: null, addrs: { address: string; family: number }[]) => void)(
+              null,
+              [{ address: boundAddress.address, family: boundAddress.family }]
+            );
+          } else {
+            callback(null, boundAddress.address, boundAddress.family);
+          }
         },
         timeout: timeoutMs
       },
