@@ -271,15 +271,16 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
         <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted">
-              © 2026 CTFDigital. Web Launch Guard.
+              © 2026 Web Launch Guard.
             </p>
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-wrap gap-4 text-sm items-center">
               <a className="text-muted hover:text-accent" href="#privacy">Privacy Policy</a>
               <a className="text-muted hover:text-accent" href="#terms">Terms of Service</a>
               <a className="text-muted hover:text-accent" href="#eula">EULA</a>
               <a className="text-muted hover:text-accent" href="#cookies">Cookie Policy</a>
-              <a className="font-semibold text-ink hover:text-accent" href="https://ctfdigital.store" rel="noopener noreferrer" target="_blank">
-                ctfdigital.store
+              <a className="inline-flex items-center gap-1.5 text-xs text-muted opacity-50 hover:opacity-100 transition-opacity" href="https://ctfdesigns.com" target="_blank" rel="noopener noreferrer">
+                <img src="https://ctfdesigns.com/images/logo.png" alt="CTF Designs" className="w-4 h-4 rounded-full object-cover" />
+                Built by CTF Designs
               </a>
             </div>
           </div>
