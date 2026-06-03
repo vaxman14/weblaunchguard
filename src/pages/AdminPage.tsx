@@ -102,6 +102,8 @@ type AdminPageProps = {
   onBack: () => void;
 };
 
+const USERS_LIMIT = 25;
+
 type ActiveView = "users" | "clients";
 
 export function AdminPage({ onBack }: AdminPageProps) {
@@ -109,6 +111,8 @@ export function AdminPage({ onBack }: AdminPageProps) {
   const [view, setView] = useState<ActiveView>("users");
   const [stats, setStats] = useState<Stats | null>(null);
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersPage, setUsersPage] = useState(1);
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [search, setSearch] = useState("");
   const [clientFilter, setClientFilter] = useState<string>("all");
@@ -132,14 +136,15 @@ export function AdminPage({ onBack }: AdminPageProps) {
     setLoading(true);
     const [statsRes, usersRes, clientsRes] = await Promise.all([
       adminCall(session.access_token, { action: "stats" }),
-      adminCall(session.access_token, { action: "list-users" }),
+      adminCall(session.access_token, { action: "list-users", page: usersPage, limit: USERS_LIMIT }),
       adminCall(session.access_token, { action: "list-clients" })
     ]);
     setStats(statsRes.error ? null : statsRes);
     setUsers(usersRes.users ?? []);
+    setUsersTotal(usersRes.total ?? 0);
     setClients(clientsRes.clients ?? []);
     setLoading(false);
-  }, [session]);
+  }, [session, usersPage]);
 
   useEffect(() => {
     void load();
@@ -372,6 +377,29 @@ export function AdminPage({ onBack }: AdminPageProps) {
                       )}
                     </tbody>
                   </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {usersTotal > USERS_LIMIT && (
+                <div className="mt-3 flex items-center gap-3">
+                  <button
+                    disabled={usersPage <= 1}
+                    onClick={() => setUsersPage((p) => p - 1)}
+                    className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm text-ink disabled:opacity-40 hover:bg-line/10"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-xs text-muted">
+                    {(usersPage - 1) * USERS_LIMIT + 1}–{Math.min(usersPage * USERS_LIMIT, usersTotal)} of {usersTotal}
+                  </span>
+                  <button
+                    disabled={usersPage * USERS_LIMIT >= usersTotal}
+                    onClick={() => setUsersPage((p) => p + 1)}
+                    className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm text-ink disabled:opacity-40 hover:bg-line/10"
+                  >
+                    Next →
+                  </button>
                 </div>
               )}
             </div>

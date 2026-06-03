@@ -88,11 +88,15 @@ function SetupChecklist({
   );
 }
 
+const REPORTS_LIMIT = 10;
+
 export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps = {}) {
   const { session, signOut, user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<SubscriptionRow[]>([]);
   const [domains, setDomains] = useState<DomainRow[]>([]);
   const [reports, setReports] = useState<ReportListRow[]>([]);
+  const [reportsTotal, setReportsTotal] = useState(0);
+  const [reportsPage, setReportsPage] = useState(1);
   const [selectedDomainId, setSelectedDomainId] = useState<string>("");
   const [passiveResult, setPassiveResult] = useState<PassiveScanResponse | null>(null);
   const [proResult, setProResult] = useState<ProAnalysisResponse | null>(null);
@@ -150,16 +154,25 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
   }, [user?.id]);
 
   const loadReports = useCallback(async () => {
-    if (!supabase || !user?.id) { setReports([]); return; }
-    const { data } = await supabase
-      .from("reports")
-      .select("id,target_url,scan_type,summary,score,domain_id,created_at")
-      .eq("user_id", user.id)
-      .eq("status", "ready")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    if (!supabase || !user?.id) { setReports([]); setReportsTotal(0); return; }
+    const offset = (reportsPage - 1) * REPORTS_LIMIT;
+    const [{ count }, { data }] = await Promise.all([
+      supabase
+        .from("reports")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "ready"),
+      supabase
+        .from("reports")
+        .select("id,target_url,scan_type,summary,score,domain_id,created_at")
+        .eq("user_id", user.id)
+        .eq("status", "ready")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + REPORTS_LIMIT - 1),
+    ]);
     setReports((data as ReportListRow[] | null) ?? []);
-  }, [user?.id]);
+    setReportsTotal(count ?? 0);
+  }, [user?.id, reportsPage]);
 
   useEffect(() => {
     void loadSubscriptions();
@@ -447,29 +460,52 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
           <Card className="p-6">
             <h2 className="text-2xl font-semibold text-ink" id="reports-heading">Saved reports</h2>
             <p className="mt-2 text-sm text-muted">Server-saved reports for this account.</p>
-            {reports.length === 0 ? (
+            {reportsTotal === 0 ? (
               <p className="mt-4 rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink" role="status">
                 No saved reports yet. Complete setup above and run your first scan.
               </p>
             ) : (
-              <ul className="mt-4 space-y-3" aria-label="Saved reports">
-                {reports.map((report) => (
-                  <li
-                    className="flex flex-col gap-2 rounded-lg border border-line bg-page p-3 sm:flex-row sm:items-center sm:justify-between"
-                    key={report.id}
-                  >
-                    <div className="min-w-0">
-                      <p className="break-words text-sm font-semibold text-ink">{report.target_url ?? "Untitled"}</p>
-                      <p className="mt-1 text-xs text-muted">
-                        {report.scan_type ?? "scan"} · score {report.score ?? "?"} · {new Date(report.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <Button onClick={() => onReportOpen?.(report.id)} variant="secondary">
-                      Open
+              <>
+                <ul className="mt-4 space-y-3" aria-label="Saved reports">
+                  {reports.map((report) => (
+                    <li
+                      className="flex flex-col gap-2 rounded-lg border border-line bg-page p-3 sm:flex-row sm:items-center sm:justify-between"
+                      key={report.id}
+                    >
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold text-ink">{report.target_url ?? "Untitled"}</p>
+                        <p className="mt-1 text-xs text-muted">
+                          {report.scan_type ?? "scan"} · score {report.score ?? "?"} · {new Date(report.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <Button onClick={() => onReportOpen?.(report.id)} variant="secondary">
+                        Open
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+                {reportsTotal > REPORTS_LIMIT && (
+                  <div className="mt-4 flex items-center gap-3">
+                    <Button
+                      disabled={reportsPage <= 1}
+                      onClick={() => setReportsPage((p) => p - 1)}
+                      variant="secondary"
+                    >
+                      ← Prev
                     </Button>
-                  </li>
-                ))}
-              </ul>
+                    <span className="text-xs text-muted">
+                      {(reportsPage - 1) * REPORTS_LIMIT + 1}–{Math.min(reportsPage * REPORTS_LIMIT, reportsTotal)} of {reportsTotal}
+                    </span>
+                    <Button
+                      disabled={reportsPage * REPORTS_LIMIT >= reportsTotal}
+                      onClick={() => setReportsPage((p) => p + 1)}
+                      variant="secondary"
+                    >
+                      Next →
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </Card>
         </section>

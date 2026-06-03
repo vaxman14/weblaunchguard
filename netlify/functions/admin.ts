@@ -3,7 +3,7 @@ import { findPersonalWorkspaceId, requireAuthenticatedUser, serverSupabaseClient
 import { tierFromString, type Tier } from "./_lib/tiers";
 
 type AdminAction =
-  | { action: "list-users" }
+  | { action: "list-users"; page?: number; limit?: number }
   | { action: "get-user"; userId: string }
   | { action: "assign-plan"; userId: string; tier: Tier | null }
   | { action: "assign-client"; userId: string; clientId: string | null }
@@ -57,18 +57,28 @@ async function listClients(client: ReturnType<typeof serverSupabaseClient>) {
   return clients.map((c) => ({ ...c, user_count: memberCountByClient[c.id] ?? 0 }));
 }
 
-async function listUsers(client: ReturnType<typeof serverSupabaseClient>) {
-  const { data: profiles, error } = await client
-    .from("profiles")
-    .select("id, email, full_name, is_admin, client_id, created_at")
-    .order("created_at", { ascending: false });
+async function listUsers(
+  client: ReturnType<typeof serverSupabaseClient>,
+  page: number,
+  limit: number
+) {
+  const offset = (page - 1) * limit;
+
+  const [{ count: total }, { data: profiles, error }] = await Promise.all([
+    client.from("profiles").select("id", { count: "exact", head: true }),
+    client
+      .from("profiles")
+      .select("id, email, full_name, is_admin, client_id, created_at")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1),
+  ]);
 
   if (error) {
     throw new Error("Failed to list users.");
   }
 
   if (!profiles || profiles.length === 0) {
-    return [];
+    return { users: [], total: total ?? 0, page, limit };
   }
 
   const userIds = profiles.map((p) => p.id);
@@ -107,7 +117,7 @@ async function listUsers(client: ReturnType<typeof serverSupabaseClient>) {
     clientNamesById[c.id] = c.name;
   }
 
-  return profiles.map((p) => ({
+  const users = profiles.map((p) => ({
     client_id: p.client_id ?? null,
     client_name: p.client_id ? (clientNamesById[p.client_id] ?? null) : null,
     created_at: p.created_at,
@@ -119,6 +129,8 @@ async function listUsers(client: ReturnType<typeof serverSupabaseClient>) {
     scans: scanCountByUser[p.id] ?? 0,
     subscription: subsByUser[p.id] ?? null
   }));
+
+  return { users, total: total ?? 0, page, limit };
 }
 
 async function getUserDetail(client: ReturnType<typeof serverSupabaseClient>, userId: string) {
@@ -260,8 +272,11 @@ export async function handler(event: NetlifyEvent) {
       case "stats":
         return jsonResponse(await getStats(client));
 
-      case "list-users":
-        return jsonResponse({ users: await listUsers(client) });
+      case "list-users": {
+        const limit = Math.min(Math.max(Number(body.limit) || 25, 1), 100);
+        const page = Math.max(Number(body.page) || 1, 1);
+        return jsonResponse(await listUsers(client, page, limit));
+      }
 
       case "list-clients":
         return jsonResponse({ clients: await listClients(client) });
