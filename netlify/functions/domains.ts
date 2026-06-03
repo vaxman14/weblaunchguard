@@ -103,7 +103,8 @@ async function handleCreate(event: NetlifyEvent, request: DomainsRequest) {
   const { count, error: countError } = await client
     .from("domains")
     .select("id", { count: "exact", head: true })
-    .eq("subscription_id", request.subscriptionId);
+    .eq("subscription_id", request.subscriptionId)
+    .eq("user_id", authResult.user.id);
 
   if (countError) {
     return errorResponse("Domain lookup failed.", 500);

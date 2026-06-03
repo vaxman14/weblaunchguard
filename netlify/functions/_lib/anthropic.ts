@@ -17,7 +17,7 @@ export type ProAnalysisResult = {
 
 export class AnthropicSetupError extends Error {
   constructor() {
-    super("GROQ_API_KEY is required for Pro analysis.");
+    super("Pro analysis is not configured. Contact support.");
     this.name = "AnthropicSetupError";
   }
 }
