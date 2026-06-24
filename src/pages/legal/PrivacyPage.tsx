@@ -6,7 +6,7 @@ type PrivacyPageProps = {
 
 export function PrivacyPage({ onBack }: PrivacyPageProps) {
   return (
-    <LegalPage title="Privacy Policy" updated="May 20, 2026" onBack={onBack}>
+    <LegalPage title="Privacy Policy" updated="June 24, 2026" onBack={onBack}>
       <p>
         Web Launch Guard ("Service", "we", "us") is operated by CTFDigital. This Privacy Policy explains what
         information we collect, how we use it, and your rights regarding that information. By using the Service
@@ -18,10 +18,6 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
         <li>
           <strong>Account data.</strong> Your email address, collected when you sign up via email/password or
           Google OAuth.
-        </li>
-        <li>
-          <strong>Billing data.</strong> Payment is processed by Stripe. We store only your Stripe customer ID
-          and subscription status — we never see or store raw card numbers.
         </li>
         <li>
           <strong>Scan data.</strong> Domain names and URLs you submit for scanning, plus the findings and
@@ -39,11 +35,10 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
 
       <h2>2. How We Use Your Information</h2>
       <ul>
-        <li>Provide and operate the Web Launch Guard scanning service.</li>
-        <li>Process billing and manage your subscription via Stripe.</li>
+        <li>Provide and operate the free Web Launch Guard scanning tool.</li>
         <li>Enforce scan quotas, rate limits, and acceptable use policies.</li>
-        <li>Send transactional communications (e.g., billing confirmations). We do not send marketing email
-          without your explicit opt-in.</li>
+        <li>Send essential account communications (e.g., email verification, security notices). We do not send
+          marketing email without your explicit opt-in.</li>
         <li>Maintain security, detect abuse, and comply with legal obligations.</li>
       </ul>
 
@@ -53,13 +48,7 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
           <strong>Supabase</strong> — database and authentication hosting (us-west-2).
         </li>
         <li>
-          <strong>Stripe</strong> — payment processing. Governed by{" "}
-          <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">
-            Stripe's Privacy Policy
-          </a>.
-        </li>
-        <li>
-          <strong>Groq</strong> — AI-assisted analysis for Pro and Enterprise scans. Scan evidence is sent to
+          <strong>Groq</strong> — AI-assisted analysis. When you run an AI review, scan evidence is sent to
           Groq's API for processing. We do not send personal information to Groq.
         </li>
         <li>

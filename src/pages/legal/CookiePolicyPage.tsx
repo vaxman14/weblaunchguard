@@ -6,7 +6,7 @@ type CookiePolicyPageProps = {
 
 export function CookiePolicyPage({ onBack }: CookiePolicyPageProps) {
   return (
-    <LegalPage title="Cookie Policy" updated="May 20, 2026" onBack={onBack}>
+    <LegalPage title="Cookie Policy" updated="June 24, 2026" onBack={onBack}>
       <p>
         This Cookie Policy explains how Web Launch Guard, operated by CTFDigital, uses cookies and
         similar browser storage technologies. By using the Service you acknowledge this use.
@@ -51,13 +51,6 @@ export function CookiePolicyPage({ onBack }: CookiePolicyPageProps) {
 
       <h2>5. Third-Party Storage</h2>
       <ul>
-        <li>
-          <strong>Stripe</strong> may set cookies on billing pages for fraud prevention. These are governed
-          by{" "}
-          <a href="https://stripe.com/cookie-settings" target="_blank" rel="noopener noreferrer">
-            Stripe's Cookie Policy
-          </a>.
-        </li>
         <li>
           <strong>Google</strong> may set cookies if you use "Continue with Google" for OAuth. Governed by{" "}
           <a href="https://policies.google.com/technologies/cookies" target="_blank" rel="noopener noreferrer">

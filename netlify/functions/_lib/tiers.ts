@@ -33,15 +33,18 @@ export const tierConfig: Record<Tier, TierConfig> = {
     annualPriceEnv: "STRIPE_PRO_ANNUAL_PRICE_ID",
     runsPerDomainPerPeriod: 20
   },
+  // 'enterprise' is the free-tool comp tier every account gets. Limits are
+  // generous for a real user but bounded to brake abuse of the free Groq AI:
+  // up to 5 domains, 25 scans per domain per rolling 30 days.
   enterprise: {
     aiEnabled: true,
-    label: "Enterprise",
-    maxDomains: 10,
-    monthlyPriceUsd: 399,
+    label: "Free",
+    maxDomains: 5,
+    monthlyPriceUsd: 0,
     monthlyPriceEnv: "STRIPE_ENTERPRISE_MONTHLY_PRICE_ID",
-    annualPriceUsdPerMonth: 349,
+    annualPriceUsdPerMonth: 0,
     annualPriceEnv: "STRIPE_ENTERPRISE_ANNUAL_PRICE_ID",
-    runsPerDomainPerPeriod: 50
+    runsPerDomainPerPeriod: 25
   }
 };
 

@@ -45,8 +45,11 @@ begin
     select 1 from public.subscriptions
     where user_id = new.id and status in ('active', 'trialing')
   ) then
-    insert into public.subscriptions (user_id, workspace_id, tier, status, current_period_start)
-    values (new.id, v_workspace_id, 'enterprise', 'active', now());
+    -- Leave current_period_start NULL so the quota helper falls back to a
+    -- rolling 30-day window (a fixed start would make the free quota
+    -- cumulative-forever and never reset).
+    insert into public.subscriptions (user_id, workspace_id, tier, status)
+    values (new.id, v_workspace_id, 'enterprise', 'active');
   end if;
 
   return new;
@@ -75,8 +78,8 @@ begin
       select 1 from public.subscriptions
       where user_id = r.id and status in ('active', 'trialing')
     ) then
-      insert into public.subscriptions (user_id, workspace_id, tier, status, current_period_start)
-      values (r.id, v_workspace_id, 'enterprise', 'active', now());
+      insert into public.subscriptions (user_id, workspace_id, tier, status)
+      values (r.id, v_workspace_id, 'enterprise', 'active');
     end if;
   end loop;
 end;

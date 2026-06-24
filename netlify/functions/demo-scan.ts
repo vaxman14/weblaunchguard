@@ -27,13 +27,24 @@ export async function handler(event: NetlifyEvent) {
   const client = serverSupabaseClient();
   const ip = clientIpAddress(event);
 
-  const rateLimit = await consumeRateLimit(client, {
+  // Anonymous endpoint — brake per IP on both an hourly and a daily window so a
+  // single caller can't use us as a free scanning proxy or run up our bandwidth.
+  const hourly = await consumeRateLimit(client, {
     bucket: `ip:${ip}:demo-scan`,
     limit: 5,
     windowSeconds: 3600
   });
-  if (!rateLimit.allowed) {
-    return errorResponse("Demo rate limit reached. Sign up for unlimited access.", 429);
+  if (!hourly.allowed) {
+    return errorResponse("Demo rate limit reached. Create a free account to keep scanning.", 429);
+  }
+
+  const daily = await consumeRateLimit(client, {
+    bucket: `ip:${ip}:demo-scan:day`,
+    limit: 25,
+    windowSeconds: 86400
+  });
+  if (!daily.allowed) {
+    return errorResponse("Daily demo limit reached. Create a free account to keep scanning.", 429);
   }
 
   let response: Awaited<ReturnType<typeof fetchWithGuards>>;

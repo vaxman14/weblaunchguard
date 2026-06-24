@@ -26,12 +26,13 @@ export const tierConfig: Record<Tier, TierConfig> = {
     monthlyPrice: 129,
     runsPerDomainPerPeriod: 20
   },
+  // Free-tool comp tier every account gets (see netlify/functions/_lib/tiers.ts).
   enterprise: {
     aiEnabled: true,
-    annualPricePerMonth: 349,
-    label: "Enterprise",
-    maxDomains: 10,
-    monthlyPrice: 399,
-    runsPerDomainPerPeriod: 50
+    annualPricePerMonth: 0,
+    label: "Free",
+    maxDomains: 5,
+    monthlyPrice: 0,
+    runsPerDomainPerPeriod: 25
   }
 };

@@ -1,5 +1,6 @@
 import * as dns from "node:dns/promises";
 import { errorResponse, jsonResponse, parseJsonBody, requireMethod, type NetlifyEvent } from "./_lib/http";
+import { clientIpAddress, consumeRateLimit } from "./_lib/rate-limit";
 import { requireAuthenticatedUser, serverSupabaseClient } from "./_lib/supabase";
 
 type VerifyDomainRequest = {
@@ -52,6 +53,18 @@ export async function handler(event: NetlifyEvent) {
   }
 
   const client = serverSupabaseClient();
+
+  // Brake DNS-lookup hammering per IP (authenticated, but cheap to spam).
+  const ip = clientIpAddress(event);
+  const rateLimit = await consumeRateLimit(client, {
+    bucket: `ip:${ip}:verify-domain`,
+    limit: 60,
+    windowSeconds: 3600
+  });
+  if (!rateLimit.allowed) {
+    return errorResponse("Too many verification checks. Try again shortly.", 429);
+  }
+
   const { data: domain, error: lookupError } = await client
     .from("domains")
     .select("id,hostname,verification_status,verification_token")

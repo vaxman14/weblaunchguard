@@ -6,7 +6,7 @@ type EulaPageProps = {
 
 export function EulaPage({ onBack }: EulaPageProps) {
   return (
-    <LegalPage title="End User License Agreement (EULA)" updated="May 20, 2026" onBack={onBack}>
+    <LegalPage title="End User License Agreement (EULA)" updated="June 24, 2026" onBack={onBack}>
       <p>
         This End User License Agreement ("EULA") is a legal agreement between you ("User") and CTFDigital
         ("Company") for the use of Web Launch Guard software and services (collectively, the "Software").
@@ -15,9 +15,9 @@ export function EulaPage({ onBack }: EulaPageProps) {
 
       <h2>1. License Grant</h2>
       <p>
-        Subject to the terms of this EULA and payment of applicable fees, CTFDigital grants you a limited,
-        non-exclusive, non-transferable, revocable license to access and use the Software solely for your
-        internal business purposes during the term of your subscription.
+        Subject to the terms of this EULA, CTFDigital grants you a limited, non-exclusive, non-transferable,
+        revocable license to access and use the Software free of charge for your own lawful purposes. The
+        Software is provided as a free tool; no fee or subscription is required or implied.
       </p>
 
       <h2>2. Restrictions</h2>
@@ -56,15 +56,16 @@ export function EulaPage({ onBack }: EulaPageProps) {
       <h2>6. Limitation of Liability</h2>
       <p>
         IN NO EVENT SHALL CTFDIGITAL BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-        CONSEQUENTIAL DAMAGES ARISING OUT OF OR IN CONNECTION WITH THIS EULA OR THE SOFTWARE. CTFDIGITAL'S
-        TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU IN THE TWELVE MONTHS PRECEDING THE CLAIM.
+        CONSEQUENTIAL DAMAGES ARISING OUT OF OR IN CONNECTION WITH THIS EULA OR THE SOFTWARE. BECAUSE THE
+        SOFTWARE IS PROVIDED FREE OF CHARGE, CTFDIGITAL'S TOTAL AGGREGATE LIABILITY SHALL NOT EXCEED ONE
+        HUNDRED U.S. DOLLARS (US $100).
       </p>
 
       <h2>7. Term and Termination</h2>
       <p>
-        This EULA is effective from the date you first use the Software and continues until your
-        subscription is terminated. CTFDigital may terminate this EULA immediately if you breach any term.
-        Upon termination, you must cease all use of the Software.
+        This EULA is effective from the date you first use the Software and continues until you stop using
+        it or your access is terminated. CTFDigital may terminate this EULA immediately if you breach any
+        term. Upon termination, you must cease all use of the Software.
       </p>
 
       <h2>8. Export Compliance</h2>

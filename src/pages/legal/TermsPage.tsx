@@ -6,10 +6,16 @@ type TermsPageProps = {
 
 export function TermsPage({ onBack }: TermsPageProps) {
   return (
-    <LegalPage title="Terms of Service" updated="May 20, 2026" onBack={onBack}>
+    <LegalPage title="Terms of Service" updated="June 24, 2026" onBack={onBack}>
       <p>
         These Terms of Service ("Terms") govern your access to and use of Web Launch Guard (the "Service"),
-        operated by CTFDigital. By creating an account or using the Service, you agree to these Terms.
+        a free website-scanning tool operated by CTFDigital. By creating an account or using the Service, you
+        agree to these Terms.
+      </p>
+      <p>
+        Web Launch Guard is provided free of charge as an informational and marketing tool. It is not a paid
+        product, carries no service-level guarantee, and its findings are advisory only — not professional
+        security, legal, or compliance advice.
       </p>
 
       <h2>1. Eligibility</h2>
@@ -42,11 +48,12 @@ export function TermsPage({ onBack }: TermsPageProps) {
         <li>Violate any applicable law or regulation.</li>
       </ul>
 
-      <h2>4. Billing & Subscriptions</h2>
+      <h2>4. Free Service</h2>
       <p>
-        Paid plans are billed monthly or annually in advance via Stripe. Subscriptions automatically renew
-        unless cancelled before the renewal date. Refunds are not provided for partial billing periods.
-        CTFDigital reserves the right to change pricing with 30 days' notice to registered users.
+        The Service is provided free of charge. There are no fees, subscriptions, or payments. We may change,
+        limit, suspend, or discontinue the Service (in whole or in part) at any time without notice or
+        liability. To keep the free service usable for everyone, we apply rate limits and usage quotas and may
+        throttle or block excessive or abusive activity.
       </p>
 
       <h2>5. Intellectual Property</h2>
@@ -66,10 +73,11 @@ export function TermsPage({ onBack }: TermsPageProps) {
 
       <h2>7. Limitation of Liability</h2>
       <p>
-        To the maximum extent permitted by law, CTFDigital's total liability for any claims arising out of
-        or relating to the Service will not exceed the amount you paid to CTFDigital in the 12 months
-        preceding the claim. CTFDigital is not liable for any indirect, incidental, special, consequential,
-        or punitive damages.
+        The Service is free. To the maximum extent permitted by law, CTFDigital's total aggregate liability
+        for any claims arising out of or relating to the Service will not exceed one hundred U.S. dollars
+        (US $100). CTFDigital is not liable for any indirect, incidental, special, consequential, or punitive
+        damages, or for any decision made or action taken in reliance on a scan result. You use the Service
+        at your own risk.
       </p>
 
       <h2>8. Indemnification</h2>
