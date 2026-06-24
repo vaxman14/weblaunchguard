@@ -17,7 +17,10 @@ export type AuthContextValue = {
   signInWithGoogle: () => Promise<{ error: AuthError | Error | null }>;
   signInWithPassword: (email: string, password: string) => Promise<{ error: AuthError | Error | null }>;
   signOut: () => Promise<{ error: AuthError | Error | null }>;
-  signUpWithPassword: (email: string, password: string) => Promise<{ error: AuthError | Error | null }>;
+  signUpWithPassword: (
+    email: string,
+    password: string
+  ) => Promise<{ error: AuthError | Error | null; session?: Session | null }>;
   user: User | null;
 };
 
@@ -94,9 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error };
     }
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     setAuthError(errorMessage(error));
-    return { error };
+    return { error, session: data?.session ?? null };
   }, []);
 
   const signInWithGoogle = useCallback(async () => {

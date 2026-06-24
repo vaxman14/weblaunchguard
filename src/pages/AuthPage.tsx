@@ -32,12 +32,21 @@ export function AuthPage({ onBack }: AuthPageProps) {
     event.preventDefault();
     setStatus(null);
 
-    const { error } = isSignIn
-      ? await signInWithPassword(email, password)
-      : await signUpWithPassword(email, password);
+    if (isSignIn) {
+      const { error } = await signInWithPassword(email, password);
+      if (!error) {
+        setStatus("Signed in.");
+      }
+      return;
+    }
 
+    const { error, session } = await signUpWithPassword(email, password);
     if (!error) {
-      setStatus(isSignIn ? "Signed in." : "Check your email to confirm your account.");
+      setStatus(
+        session
+          ? "Account created — signing you in…"
+          : "That email may already be registered. Try signing in instead."
+      );
     }
   }
 
@@ -89,8 +98,8 @@ export function AuthPage({ onBack }: AuthPageProps) {
             {isSignIn ? "Sign in to Web Launch Guard" : "Create your Web Launch Guard account"}
           </h1>
           <p className="mt-5 text-base leading-7 text-muted">
-            Use the auth foundation to prepare for private launch workspaces while scanner and dashboard
-            workflows stay out of this release slice.
+            A free account lets you verify your domain, run full scans, save reports, and share them. No
+            credit card, no email confirmation — sign up and you're in.
           </p>
         </section>
 
