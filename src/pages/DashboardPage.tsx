@@ -2,8 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { BillingPanel, type SubscriptionRow } from "../features/billing/BillingPanel";
-import { PricingCards } from "../features/billing/PricingCards";
+import { CtfCallout } from "../features/cta/CtfCallout";
 import { DomainsPanel } from "../features/domains/DomainsPanel";
 import { FindingList } from "../features/scans/FindingList";
 import { ProModeSelector } from "../features/scans/ProModeSelector";
@@ -15,7 +14,8 @@ import {
   type DomainRow,
   type PassiveScanResponse,
   type ProAnalysisMode,
-  type ProAnalysisResponse
+  type ProAnalysisResponse,
+  type SubscriptionRow
 } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
@@ -37,27 +37,22 @@ type DashboardPageProps = {
 };
 
 function SetupChecklist({
-  hasSubscription,
   hasVerifiedDomain,
-  hasReport,
-  onAddSubscription
+  hasReport
 }: {
   hasReport: boolean;
-  hasSubscription: boolean;
   hasVerifiedDomain: boolean;
-  onAddSubscription: () => void;
 }) {
   const steps = [
-    { done: hasSubscription, label: "Add a subscription" },
     { done: hasVerifiedDomain, label: "Verify your domain via DNS" },
-    { done: hasReport, label: "Run your first scan" }
+    { done: hasReport, label: "Run your first free scan" }
   ];
   const nextIdx = steps.findIndex((s) => !s.done);
 
   return (
     <Card className="p-6">
       <h2 className="text-xl font-semibold text-ink">Getting started</h2>
-      <p className="mt-2 text-sm text-muted">Complete these steps to run your first launch scan.</p>
+      <p className="mt-2 text-sm text-muted">Add a domain below, verify it via DNS, then scan it free.</p>
       <ol className="mt-5 space-y-3">
         {steps.map((step, i) => (
           <li
@@ -79,11 +74,6 @@ function SetupChecklist({
           </li>
         ))}
       </ol>
-      {!hasSubscription && (
-        <Button className="mt-5" onClick={onAddSubscription} variant="secondary">
-          Choose a plan →
-        </Button>
-      )}
     </Card>
   );
 }
@@ -104,7 +94,6 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
   const [proLoading, setProLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
 
   const verifiedDomains = useMemo(
     () => domains.filter((domain) => domain.verification_status === "verified"),
@@ -121,23 +110,23 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
     return subscriptions.find((sub) => sub.id === selectedDomain.subscription_id) ?? null;
   }, [selectedDomain, subscriptions]);
 
-  const selectedTierAiEnabled = selectedSubscription ? tierConfig[selectedSubscription.tier].aiEnabled : false;
+  // AI (Groq) is available on the free comp tier; gate only on having run a passive scan.
+  const aiEnabled = selectedSubscription ? tierConfig[selectedSubscription.tier]?.aiEnabled ?? true : true;
 
   const activeSubscriptions = useMemo(
     () => subscriptions.filter((s) => s.status === "active" || s.status === "trialing"),
     [subscriptions]
   );
 
-  const hasSubscription = activeSubscriptions.length > 0;
   const hasVerifiedDomain = verifiedDomains.length > 0;
   const hasReport = reports.length > 0;
-  const isSetupComplete = hasSubscription && hasVerifiedDomain;
+  const isSetupComplete = hasVerifiedDomain;
 
   const loadSubscriptions = useCallback(async () => {
     if (!supabase || !user?.id) { setSubscriptions([]); return; }
     const { data } = await supabase
       .from("subscriptions")
-      .select("id,tier,status,billing_interval,stripe_customer_id,current_period_start,current_period_end")
+      .select("id,tier,status")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
     setSubscriptions((data as SubscriptionRow[] | null) ?? []);
@@ -230,8 +219,7 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
   }
 
   function proLockedReason(): string | null {
-    if (!selectedSubscription) return "Pick a verified domain attached to an active subscription.";
-    if (!selectedTierAiEnabled) return "AI review requires the Pro or Enterprise tier.";
+    if (!selectedSubscription) return "Pick a verified domain first.";
     if (!passiveResult) return "Run a passive scan first so AI analysis has launch evidence to review.";
     return null;
   }
@@ -250,11 +238,6 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
             <p className="mt-1 break-words text-sm text-muted">{user?.email}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {activeSubscriptions.length > 0 && (
-              <span className="rounded-full border border-line bg-panel px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                {activeSubscriptions.length} active subscription{activeSubscriptions.length === 1 ? "" : "s"}
-              </span>
-            )}
             <ThemeToggle />
             {isAdmin && onAdminOpen && (
               <Button className="min-h-10 px-3" onClick={onAdminOpen} variant="ghost">
@@ -270,22 +253,17 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
 
       <main className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-8">
 
-        {/* Setup progress — shown until user has verified domain */}
+        {/* Setup progress — shown until user has a verified domain */}
         {!isSetupComplete && (
           <section className="mb-8 grid gap-6 lg:grid-cols-2">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">Dashboard</p>
               <h1 className="mt-4 text-4xl font-semibold leading-tight text-ink">Launch dashboard</h1>
               <p className="mt-4 text-base leading-7 text-muted">
-                Add a subscription, verify your domain via DNS, then run launch readiness scans.
+                Add your domain, verify it via DNS, then run free launch-readiness scans as often as you like.
               </p>
             </div>
-            <SetupChecklist
-              hasReport={hasReport}
-              hasSubscription={hasSubscription}
-              hasVerifiedDomain={hasVerifiedDomain}
-              onAddSubscription={() => setShowPricing(true)}
-            />
+            <SetupChecklist hasReport={hasReport} hasVerifiedDomain={hasVerifiedDomain} />
           </section>
         )}
 
@@ -320,7 +298,7 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
               <div className="mb-5">
                 <h2 className="text-2xl font-semibold text-ink">Run a scan</h2>
                 <p className="mt-2 text-sm leading-6 text-muted">
-                  Choose a verified domain and enter its URL. Each scan counts against the billing-period quota.
+                  Choose a verified domain and enter its URL. Scans are free.
                 </p>
               </div>
               {verifiedDomains.length === 0 ? (
@@ -350,11 +328,6 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
                   {error}
                 </p>
               ) : null}
-              {passiveResult ? (
-                <p className="mt-3 text-xs text-muted">
-                  Quota: {passiveResult.quota.used}/{passiveResult.quota.limit} runs used this period.
-                </p>
-              ) : null}
             </Card>
           </section>
         )}
@@ -379,15 +352,22 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
               <FindingList findings={passiveResult?.findings ?? []} />
             </section>
 
+            {/* CTF lead funnel — shown after any scan result */}
+            {passiveResult && (
+              <section className="mb-8">
+                <CtfCallout hasFindings={passiveResult.findings.length > 0} />
+              </section>
+            )}
+
             <section className="mb-8">
               <Soc2Checklist checklist={proResult?.soc2 ?? passiveResult?.soc2 ?? null} />
             </section>
 
-            {selectedTierAiEnabled && (
+            {aiEnabled && (
               <>
                 <section className="mb-8">
                   <ProModeSelector
-                    disabled={proLoading || !selectedTierAiEnabled}
+                    disabled={proLoading}
                     lockedReason={proLockedReason() ?? undefined}
                     onRun={handleProAnalysis}
                   />
@@ -416,43 +396,6 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
             onDomainsChanged={loadDomains}
             subscriptions={activeSubscriptions}
           />
-        </section>
-
-        {/* Billing panel — shown once they have any subscription */}
-        {hasSubscription && (
-          <section className="mb-8">
-            <BillingPanel accessToken={session?.access_token} subscriptions={subscriptions} />
-          </section>
-        )}
-
-        {/* Pricing — always accessible, highlighted in setup state */}
-        <section className="mb-8" aria-labelledby="plans-heading" id="plans-section">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-ink" id="plans-heading">
-              {hasSubscription ? "Add a subscription" : "Choose a plan"}
-            </h2>
-            {!showPricing && !hasSubscription && (
-              <Button onClick={() => setShowPricing(true)} variant="secondary">
-                View plans
-              </Button>
-            )}
-          </div>
-          {(showPricing || hasSubscription) ? (
-            <PricingCards accessToken={session?.access_token} enableCheckout />
-          ) : (
-            <Card className="p-6">
-              <p className="text-sm text-muted">
-                Pick a plan to verify your domain and start scanning.{" "}
-                <button
-                  className="font-semibold text-accent hover:text-accent-strong"
-                  onClick={() => setShowPricing(true)}
-                  type="button"
-                >
-                  View plans →
-                </button>
-              </p>
-            </Card>
-          )}
         </section>
 
         {/* Saved reports */}
@@ -509,21 +452,6 @@ export function DashboardPage({ onAdminOpen, onReportOpen }: DashboardPageProps 
             )}
           </Card>
         </section>
-
-        {/* AI upsell — shown only when on Basic tier with a scan result */}
-        {passiveResult && selectedSubscription?.tier === "basic" && (
-          <section className="mb-8">
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold text-ink">Unlock AI review</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Your passive scan is ready. Upgrade to Pro to get AI-prioritized launch risks, guided remediation, and controlled live inspection.
-              </p>
-              <Button className="mt-4" onClick={() => setShowPricing(true)} variant="secondary">
-                Upgrade to Pro →
-              </Button>
-            </Card>
-          </section>
-        )}
       </main>
     </>
   );

@@ -172,28 +172,14 @@ export async function verifyDomain(input: AuthRequest & { domainId: string }): P
   return readJson<DomainVerificationResponse>(response, "Domain verification failed.");
 }
 
-export async function createCheckoutSession(input: AuthRequest & {
-  interval: BillingInterval;
+// Free-tool model: every account has one invisible "comp" subscription that the
+// scan/verify/quota backend still keys on. We only ever need its id to attach a
+// domain to; there is no billing surface.
+export type SubscriptionRow = {
+  id: string;
+  status: string;
   tier: Tier;
-}): Promise<{ url: string }> {
-  const response = await fetch("/.netlify/functions/create-checkout", {
-    body: JSON.stringify({ interval: input.interval, tier: input.tier }),
-    headers: authHeaders(input.accessToken),
-    method: "POST"
-  });
-
-  return readJson<{ url: string }>(response, "Checkout session creation failed.");
-}
-
-export async function createPortalSession(input: AuthRequest): Promise<{ url: string }> {
-  const response = await fetch("/.netlify/functions/create-portal", {
-    body: JSON.stringify({}),
-    headers: authHeaders(input.accessToken),
-    method: "POST"
-  });
-
-  return readJson<{ url: string }>(response, "Customer Portal session creation failed.");
-}
+};
 
 export type DemoScanResponse = {
   findings: ScanFinding[];

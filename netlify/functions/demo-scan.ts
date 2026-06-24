@@ -9,7 +9,7 @@ type DemoScanRequest = {
   url?: string;
 };
 
-const MAX_DEMO_FINDINGS = 3;
+const MAX_DEMO_FINDINGS = 50;
 
 export async function handler(event: NetlifyEvent) {
   const methodError = requireMethod(event, "POST");

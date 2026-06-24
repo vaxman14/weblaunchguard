@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { PricingCards } from "../features/billing/PricingCards";
+import { CtfCallout } from "../features/cta/CtfCallout";
 import { FindingList } from "../features/scans/FindingList";
 import { runDemoScan, type DemoScanResponse } from "../lib/api";
 
@@ -84,8 +84,13 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
             >
               Sample report
             </button>
-            <a className="text-sm font-semibold text-muted hover:text-ink" href="#pricing">
-              Pricing
+            <a
+              className="text-sm font-semibold text-muted hover:text-ink"
+              href="https://ctfdesigns.com"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              CTF Designs
             </a>
             <ThemeToggle />
             <Button className="min-h-10 px-3" onClick={onAuthOpen} variant="ghost">
@@ -103,17 +108,17 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
         <section className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-8 lg:py-24">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-              Launch readiness scanner
+              Free website scanner
             </p>
             <h1 className="mt-5 text-4xl font-semibold leading-tight text-ink sm:text-6xl">
-              Ship with confidence.<br className="hidden sm:block" /> Catch security gaps first.
+              Is your website safe?<br className="hidden sm:block" /> Find out free in seconds.
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted">
               Web Launch Guard passively scans your public homepage for security headers, cookie hygiene,
-              accessibility signals, and transport security — then generates a shareable launch report in seconds.
+              accessibility signals, and transport security — then shows you exactly what's wrong. Free, no credit card.
             </p>
             <p className="mt-3 text-sm text-muted">
-              Passive scan only — we never log in, crawl, or touch your backend.
+              Passive scan only — we never log in, crawl, or touch your backend. A free tool by CTF Designs.
             </p>
 
             {/* Demo scan input */}
@@ -172,19 +177,21 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
                     </div>
                   </div>
                   <FindingList findings={demoResult.findings} />
-                  <div className="mt-5 rounded-lg border border-accent/30 bg-accent/5 p-4">
-                    <p className="text-sm font-semibold text-ink">
-                      {demoResult.totalFindings > demoResult.findings.length
-                        ? `Showing ${demoResult.findings.length} of ${demoResult.totalFindings} findings.`
-                        : "This is a preview — your full report includes detailed remediation steps and a SOC 2-aligned checklist."}
+                  <div className="mt-5">
+                    <CtfCallout hasFindings={demoResult.findings.length > 0} />
+                  </div>
+                  <div className="mt-4 rounded-lg border border-line bg-page p-4">
+                    <p className="text-sm text-muted">
+                      Want to verify your domain, track fixes over time, and share a public report link?
+                      {" "}
+                      <button
+                        className="font-semibold text-accent hover:text-accent-strong"
+                        onClick={onAuthOpen}
+                        type="button"
+                      >
+                        Create a free account →
+                      </button>
                     </p>
-                    <p className="mt-1 text-sm text-muted">
-                      Create a free account to unlock the complete report, track fixes, and share a public link with your team.
-                    </p>
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <Button onClick={onAuthOpen}>Get full report — it's free</Button>
-                      <Button onClick={onSampleReport} variant="secondary">See a sample first</Button>
-                    </div>
                   </div>
                 </>
               ) : null}
@@ -237,32 +244,14 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
           </div>
           <div className="mt-10 text-center">
             <Button onClick={onAuthOpen}>Get started free</Button>
-            <p className="mt-3 text-sm text-muted">No credit card required. Try the demo scan above.</p>
+            <p className="mt-3 text-sm text-muted">100% free. No credit card. Try the scan above right now.</p>
           </div>
         </section>
 
-        {/* Pricing */}
-        <section
-          aria-labelledby="pricing-heading"
-          className="border-t border-line/80 bg-panel/55"
-          id="pricing"
-        >
-          <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:px-8">
-            <div className="mb-10 text-center">
-              <h2 className="text-3xl font-semibold text-ink" id="pricing-heading">
-                Simple, transparent pricing
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                Each domain is verified by DNS before any scan runs. Plans scale with your launch volume.
-              </p>
-            </div>
-            <PricingCards />
-            <p className="mt-6 text-center text-sm text-muted">
-              <button className="font-semibold text-accent hover:text-accent-strong" onClick={onAuthOpen} type="button">
-                Sign up
-              </button>
-              {" "}to choose a plan and start scanning.
-            </p>
+        {/* Closing CTF funnel */}
+        <section className="border-t border-line/80 bg-panel/55">
+          <div className="mx-auto w-full max-w-3xl px-6 py-16 sm:px-8">
+            <CtfCallout hasFindings={false} />
           </div>
         </section>
       </main>
@@ -271,7 +260,7 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
         <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted">
-              © 2026 Web Launch Guard.
+              © 2026 Web Launch Guard. A free marketing tool by CTF Designs, provided as-is with no warranty.
             </p>
             <div className="flex flex-wrap gap-4 text-sm items-center">
               <a className="text-muted hover:text-accent" href="#privacy">Privacy Policy</a>

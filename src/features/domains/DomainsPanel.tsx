@@ -2,9 +2,7 @@ import { CheckCircle2, Clipboard, Plus, ShieldCheck, Trash2 } from "lucide-react
 import { useState, type FormEvent } from "react";
 import { Button } from "../../components/Button";
 import { Card } from "../../components/Card";
-import { createDomain, deleteDomain, verifyDomain, type DomainRow } from "../../lib/api";
-import type { SubscriptionRow } from "../billing/BillingPanel";
-import { tierConfig } from "../../lib/tiers";
+import { createDomain, deleteDomain, verifyDomain, type DomainRow, type SubscriptionRow } from "../../lib/api";
 
 type DomainsPanelProps = {
   accessToken?: string | null;
@@ -15,12 +13,15 @@ type DomainsPanelProps = {
 
 export function DomainsPanel({ accessToken, domains, onDomainsChanged, subscriptions }: DomainsPanelProps) {
   const [hostname, setHostname] = useState("");
-  const [subscriptionId, setSubscriptionId] = useState<string>(subscriptions[0]?.id ?? "");
   const [creating, setCreating] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  // Free tool: every account has exactly one invisible comp subscription. We
+  // attach domains to it automatically — no plan picker.
+  const subscriptionId = subscriptions[0]?.id ?? "";
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +29,7 @@ export function DomainsPanel({ accessToken, domains, onDomainsChanged, subscript
     setInfo(null);
 
     if (!subscriptionId) {
-      setError("Pick a subscription to attach this domain to.");
+      setError("Your account is still being set up. Refresh in a moment and try again.");
       return;
     }
 
@@ -109,54 +110,27 @@ export function DomainsPanel({ accessToken, domains, onDomainsChanged, subscript
         </div>
       </div>
 
-      {subscriptions.length === 0 ? (
-        <p className="rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink" role="status">
-          Pick a plan above before adding domains.
-        </p>
-      ) : (
-        <form className="grid gap-3 sm:grid-cols-[1fr_14rem_auto]" onSubmit={handleCreate}>
-          <div>
-            <label className="text-sm font-semibold text-ink" htmlFor="domains-hostname">
-              Hostname
-            </label>
-            <input
-              autoComplete="url"
-              className="mt-2 min-h-11 w-full rounded-lg border border-line bg-page px-3 text-ink shadow-sm focus:border-accent"
-              id="domains-hostname"
-              onChange={(event) => setHostname(event.target.value)}
-              placeholder="example.com"
-              required
-              type="text"
-              value={hostname}
-            />
-          </div>
-          <div>
-            <label className="text-sm font-semibold text-ink" htmlFor="domains-subscription">
-              Subscription
-            </label>
-            <select
-              className="mt-2 min-h-11 w-full rounded-lg border border-line bg-page px-3 text-ink shadow-sm focus:border-accent"
-              id="domains-subscription"
-              onChange={(event) => setSubscriptionId(event.target.value)}
-              value={subscriptionId}
-            >
-              {subscriptions.map((subscription) => {
-                const config = tierConfig[subscription.tier];
-                const used = domains.filter((domain) => domain.subscription_id === subscription.id).length;
-                return (
-                  <option key={subscription.id} value={subscription.id}>
-                    {config.label} ({used}/{config.maxDomains}) — {subscription.status}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-          <Button className="self-end whitespace-nowrap" disabled={creating} type="submit">
-            <Plus aria-hidden="true" size={18} />
-            {creating ? "Adding" : "Add domain"}
-          </Button>
-        </form>
-      )}
+      <form className="grid gap-3 sm:grid-cols-[1fr_auto]" onSubmit={handleCreate}>
+        <div>
+          <label className="text-sm font-semibold text-ink" htmlFor="domains-hostname">
+            Hostname
+          </label>
+          <input
+            autoComplete="url"
+            className="mt-2 min-h-11 w-full rounded-lg border border-line bg-page px-3 text-ink shadow-sm focus:border-accent"
+            id="domains-hostname"
+            onChange={(event) => setHostname(event.target.value)}
+            placeholder="example.com"
+            required
+            type="text"
+            value={hostname}
+          />
+        </div>
+        <Button className="self-end whitespace-nowrap" disabled={creating} type="submit">
+          <Plus aria-hidden="true" size={18} />
+          {creating ? "Adding" : "Add domain"}
+        </Button>
+      </form>
 
       {info ? (
         <p className="mt-4 rounded-lg border border-line bg-page px-3 py-2 text-sm text-ink" role="status">

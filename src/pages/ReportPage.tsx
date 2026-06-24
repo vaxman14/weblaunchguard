@@ -2,6 +2,7 @@ import { Copy, Download, Link, LockKeyhole, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
+import { CtfCallout } from "../features/cta/CtfCallout";
 import { FindingList } from "../features/scans/FindingList";
 import { Soc2Checklist } from "../features/scans/Soc2Checklist";
 import {
@@ -292,6 +293,10 @@ export function ReportPage({ accessToken, onBack, reportId }: ReportPageProps) {
 
             <section className="mt-8">
               <Soc2Checklist checklist={report.payload?.soc2 ?? null} />
+            </section>
+
+            <section className="mt-8">
+              <CtfCallout hasFindings={sortedFindings.length > 0} />
             </section>
           </>
         )}

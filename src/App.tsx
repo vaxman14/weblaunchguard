@@ -73,11 +73,6 @@ function AppContent() {
     window.location.hash = "";
   }
 
-  function clearShare() {
-    window.history.pushState("", document.title, window.location.pathname);
-    setSearch("");
-  }
-
   // Shared report — accessible without auth
   if (shareToken) {
     return (

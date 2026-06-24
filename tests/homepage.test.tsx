@@ -2,13 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 import App from "../src/App";
 
-test("renders the public homepage with the three pricing tiers", () => {
+test("renders the public homepage as a free tool with CTF Designs funnel", () => {
   render(<App />);
 
-  expect(screen.getByRole("heading", { name: "Web Launch Guard" })).toBeInTheDocument();
-  expect(screen.getAllByText(/CTFDigital/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/Basic/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/Pro/).length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/Enterprise/).length).toBeGreaterThan(0);
-  expect(screen.getByRole("button", { name: /annual/i })).toBeInTheDocument();
+  expect(screen.getAllByText(/Web Launch Guard/i).length).toBeGreaterThan(0);
+  // Free framing, no pricing tiers anymore.
+  expect(screen.getByRole("heading", { name: /Is your website safe/i })).toBeInTheDocument();
+  expect(screen.getAllByText(/free/i).length).toBeGreaterThan(0);
+  expect(screen.queryByRole("button", { name: /annual/i })).toBeNull();
+  // CTF Designs lead funnel is present.
+  expect(screen.getAllByText(/CTF Designs/i).length).toBeGreaterThan(0);
 });

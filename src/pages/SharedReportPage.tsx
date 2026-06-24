@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
+import { CtfCallout } from "../features/cta/CtfCallout";
 import { FindingList } from "../features/scans/FindingList";
 import { Soc2Checklist } from "../features/scans/Soc2Checklist";
 import { fetchPublicReport, type PublicReportResponse, type ScanFinding } from "../lib/api";
@@ -119,10 +120,14 @@ export function SharedReportPage({ onAuthOpen, shareToken }: SharedReportPagePro
               <Soc2Checklist checklist={data.report.payload?.soc2 ?? null} />
             </section>
 
-            <section className="mt-10 rounded-xl border border-line bg-panel/60 px-6 py-8 text-center">
+            <section className="mt-10">
+              <CtfCallout hasFindings={sortedFindings.length > 0} />
+            </section>
+
+            <section className="mt-8 rounded-xl border border-line bg-panel/60 px-6 py-8 text-center">
               <h2 className="text-2xl font-semibold text-ink">Get your own launch report</h2>
               <p className="mx-auto mt-3 max-w-md text-base leading-7 text-muted">
-                Verify your domain, run a passive scan, and share results with your team in minutes.
+                Verify your domain, run a scan, and share results with your team in minutes. Free.
               </p>
               <Button className="mt-6" onClick={onAuthOpen}>
                 Start for free

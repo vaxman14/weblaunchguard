@@ -15,7 +15,7 @@ const steps = [
     label: "1"
   },
   {
-    body: "Add a subscription, then register your domain hostname (e.g. acme.io). One domain per Basic subscription. Pro covers up to 3. You can add and remove domains at any time.",
+    body: "Register your domain hostname (e.g. acme.io) on the dashboard. It's free — no plan or card required. You can add and remove domains at any time.",
     cta: "Next: Verify ownership",
     heading: "Add your domain",
     id: "domain",
