@@ -24,14 +24,15 @@ test("cycles theme preferences and persists the selected mode", async () => {
 
   const toggle = screen.getByRole("button", { name: /theme/i });
 
-  await userEvent.click(toggle);
-  expect(localStorage.getItem("wlg_theme")).toBe("dark");
-  expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-
+  // Default theme is now "dark" (CTF family); cycle order: dark -> system -> light -> dark.
   await userEvent.click(toggle);
   expect(localStorage.getItem("wlg_theme")).toBe("system");
 
   await userEvent.click(toggle);
   expect(localStorage.getItem("wlg_theme")).toBe("light");
   expect(document.documentElement).toHaveAttribute("data-theme", "light");
+
+  await userEvent.click(toggle);
+  expect(localStorage.getItem("wlg_theme")).toBe("dark");
+  expect(document.documentElement).toHaveAttribute("data-theme", "dark");
 });
