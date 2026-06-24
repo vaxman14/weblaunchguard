@@ -31,6 +31,12 @@ export function CtfCallout({ hasFindings = true }: CtfCalloutProps) {
           See our work
         </Button>
       </div>
+      <p className="mt-4 border-t border-line/60 pt-3 text-xs leading-5 text-muted">
+        Web Launch Guard is a free, automated marketing tool — not a professional security audit. Its reports
+        are informational and meant to be reviewed and interpreted by CTF Designs as a starting point for
+        improving your site. CTF Designs, its owner, and any affiliated companies accept no responsibility or
+        liability for any use of, interpretation of, or reliance on a report by any other party.
+      </p>
     </Card>
   );
 }
