@@ -39,6 +39,7 @@ type HomePageProps = {
 
 export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
   const [demoUrl, setDemoUrl] = useState("");
+  const [demoAgreed, setDemoAgreed] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoResult, setDemoResult] = useState<DemoScanResponse | null>(null);
   const [demoError, setDemoError] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
 
   async function handleDemoScan(e: React.FormEvent) {
     e.preventDefault();
-    if (!demoUrl.trim()) return;
+    if (!demoUrl.trim() || !demoAgreed) return;
 
     setDemoError(null);
     setDemoResult(null);
@@ -133,10 +134,30 @@ export function HomePage({ onAuthOpen, onSampleReport }: HomePageProps) {
                 type="url"
                 value={demoUrl}
               />
-              <Button disabled={demoLoading} type="submit">
+              <Button disabled={demoLoading || !demoAgreed} type="submit">
                 {demoLoading ? "Scanning…" : "Free scan"}
               </Button>
             </form>
+
+            <label
+              className="mx-auto mt-4 flex max-w-xl items-start justify-center gap-2 text-left text-sm text-muted"
+              htmlFor="demo-agree"
+            >
+              <input
+                checked={demoAgreed}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-line text-accent focus:ring-accent"
+                id="demo-agree"
+                onChange={(e) => setDemoAgreed(e.target.checked)}
+                type="checkbox"
+              />
+              <span>
+                I agree to the{" "}
+                <a className="font-semibold text-accent hover:text-accent-strong" href="#terms">
+                  Terms of Service
+                </a>{" "}
+                and understand this is a free informational marketing tool, not a professional security audit.
+              </span>
+            </label>
 
             <div className="mt-4 flex flex-wrap justify-center gap-3">
               <button
