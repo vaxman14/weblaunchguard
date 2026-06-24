@@ -32,11 +32,11 @@ function safeSetItem(key: string, value: string) {
 
 function getStoredTheme(): ThemeMode {
   if (typeof window === "undefined") {
-    return "light";
+    return "dark";
   }
 
   const stored = safeGetItem(THEME_KEY);
-  return stored === "dark" || stored === "system" || stored === "light" ? stored : "light";
+  return stored === "dark" || stored === "system" || stored === "light" ? stored : "dark";
 }
 
 function getSystemTheme(): "light" | "dark" {

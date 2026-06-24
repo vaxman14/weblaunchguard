@@ -89,7 +89,7 @@ export function A11yWidget() {
   ];
 
   return (
-    <div className="fixed bottom-20 right-4 z-50" ref={panelRef}>
+    <div className="fixed bottom-6 right-6 z-50" ref={panelRef}>
       {open && (
         <div
           role="dialog"
@@ -169,9 +169,11 @@ export function A11yWidget() {
         aria-label={open ? "Close accessibility options" : "Open accessibility options"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-panel text-xl shadow-soft hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent"
+        className="flex h-[58px] w-[58px] items-center justify-center rounded-full bg-accent text-white shadow-soft ring-2 ring-white/15 transition hover:brightness-110 focus-visible:outline focus-visible:outline-3 focus-visible:outline-accent"
       >
-        ♿
+        <svg aria-hidden="true" className="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm9 5H3v2h6v13h2v-6h2v6h2V9h6V7z" />
+        </svg>
       </button>
     </div>
   );

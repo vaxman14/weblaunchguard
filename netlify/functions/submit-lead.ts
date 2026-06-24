@@ -1,3 +1,4 @@
+import { generateFixPlan, type FixPlan } from "./_lib/anthropic";
 import { errorResponse, jsonResponse, parseJsonBody, requireMethod, type NetlifyEvent } from "./_lib/http";
 import { validateTargetUrl } from "./_lib/network";
 import { clientIpAddress, consumeRateLimit } from "./_lib/rate-limit";
@@ -28,7 +29,23 @@ function esc(value: unknown): string {
   return String(value ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] as string));
 }
 
-function buildReportEmail(opts: { hostname: string; name: string; score: number; findings: ScanFinding[] }): string {
+function fixPlanEmailBlock(fixPlan: FixPlan | null): string {
+  if (!fixPlan) return "";
+  const items = fixPlan.priorities
+    .map(
+      (p) => `<div style="margin-bottom:14px">
+        <div style="font:600 14px Arial;color:#101828">${esc(p.problem)}</div>
+        <div style="font:13px/1.5 Arial;color:#667085;margin:2px 0">${esc(p.impact)}</div>
+        <div style="font:13px/1.5 Arial;color:#344054"><b style="color:#7c3aed">How we'd fix it:</b> ${esc(p.fix)}</div>
+      </div>`
+    )
+    .join("");
+  return `<div style="margin:22px 0;padding:18px;border:1px solid #eaecf0;border-radius:10px;background:#fbfaff">
+    <div style="font:700 16px Arial;color:#101828;margin-bottom:6px">How CTF Designs would fix this</div>
+    <div style="font:13px/1.6 Arial;color:#475467;margin-bottom:12px">${esc(fixPlan.intro)}</div>${items}</div>`;
+}
+
+function buildReportEmail(opts: { fixPlan: FixPlan | null; hostname: string; name: string; score: number; findings: ScanFinding[] }): string {
   const sevColor: Record<string, string> = { high: "#b42318", medium: "#b54708", low: "#475467" };
   const order: Record<string, number> = { high: 0, medium: 1, low: 2 };
   const rows = [...opts.findings]
@@ -53,6 +70,7 @@ function buildReportEmail(opts: { hostname: string; name: string; score: number;
       <div style="font:12px Arial;color:#667085">RISK SCORE / 100 · ${opts.findings.length} issues found</div>
     </div>
     <table style="width:100%;border-collapse:collapse">${rows}</table>
+    ${fixPlanEmailBlock(opts.fixPlan)}
     <div style="background:#0b0b14;border-radius:12px;padding:22px;margin:22px 0;text-align:center">
       <div style="font:700 18px Arial;color:#fff;margin-bottom:6px">Want these fixed for you?</div>
       <div style="font:14px/1.5 Arial;color:#cbd5e1;margin-bottom:14px">CTF Designs builds fast, secure, compliant websites — and can fix everything in this report.</div>
@@ -139,6 +157,13 @@ export async function handler(event: NetlifyEvent) {
   const riskScore = calculateRiskScore(report.findings);
   const hostname = new URL(report.finalUrl).hostname.replace(/^www\./, "");
 
+  // AI closer: tailored "how CTF Designs fixes this" (best-effort — null if Groq is down/unset).
+  const fixPlan = await generateFixPlan({
+    business,
+    findings: report.findings.map((f) => ({ category: f.category, severity: f.severity, title: f.title })),
+    hostname
+  });
+
   // Store the lead (best-effort — never fail the report on a storage hiccup).
   const { error: leadError } = await client.from("leads").insert({
     business,
@@ -158,13 +183,14 @@ export async function handler(event: NetlifyEvent) {
   await sendReportEmail(
     email,
     `Your Web Launch Guard report for ${hostname} (score ${riskScore}/100)`,
-    buildReportEmail({ findings: report.findings, hostname, name, score: riskScore })
+    buildReportEmail({ findings: report.findings, fixPlan, hostname, name, score: riskScore })
   );
 
   return jsonResponse({
     emailed: true,
     findings: report.findings,
     finalUrl: report.finalUrl,
+    fixPlan,
     generatedAt: report.generatedAt,
     riskScore,
     soc2,

@@ -6,8 +6,8 @@ test("renders the public homepage as a free tool with CTF Designs funnel", () =>
   render(<App />);
 
   expect(screen.getAllByText(/Web Launch Guard/i).length).toBeGreaterThan(0);
-  // Free framing, no pricing tiers anymore.
-  expect(screen.getByRole("heading", { name: /Is your website safe/i })).toBeInTheDocument();
+  // Free framing, lead-magnet flow.
+  expect(screen.getByRole("heading", { name: /costing you customers/i })).toBeInTheDocument();
   expect(screen.getAllByText(/free/i).length).toBeGreaterThan(0);
   expect(screen.queryByRole("button", { name: /annual/i })).toBeNull();
   // CTF Designs lead funnel is present.

@@ -200,6 +200,37 @@ export async function runDemoScan(url: string): Promise<DemoScanResponse> {
   return readJson<DemoScanResponse>(response, "Demo scan failed.");
 }
 
+export type FixPlanItem = { fix: string; impact: string; problem: string };
+export type FixPlan = { intro: string; priorities: FixPlanItem[] };
+
+export type LeadReportResponse = {
+  emailed: boolean;
+  findings: ScanFinding[];
+  finalUrl: string;
+  fixPlan?: FixPlan | null;
+  generatedAt: string;
+  riskScore: number;
+  soc2: Soc2Checklist;
+  summary: string;
+  totalFindings: number;
+};
+
+export async function submitLead(input: {
+  business: string;
+  email: string;
+  name: string;
+  newsletter: boolean;
+  url: string;
+}): Promise<LeadReportResponse> {
+  const response = await fetch("/.netlify/functions/submit-lead", {
+    body: JSON.stringify(input),
+    headers: { "content-type": "application/json" },
+    method: "POST"
+  });
+
+  return readJson<LeadReportResponse>(response, "Could not generate your full report.");
+}
+
 export async function createShareToken(input: AuthRequest & { reportId: string }): Promise<{ share_token: string }> {
   const response = await fetch("/.netlify/functions/share-report", {
     body: JSON.stringify({ action: "create", reportId: input.reportId }),

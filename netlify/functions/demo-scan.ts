@@ -9,7 +9,9 @@ type DemoScanRequest = {
   url?: string;
 };
 
-const MAX_DEMO_FINDINGS = 50;
+// Teaser only — the free scan shows the score, the total count, and a few
+// findings. The full list + remediation comes after the lead form (submit-lead).
+const MAX_DEMO_FINDINGS = 3;
 
 export async function handler(event: NetlifyEvent) {
   const methodError = requireMethod(event, "POST");
