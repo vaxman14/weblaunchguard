@@ -11,6 +11,10 @@ export type FindingCategory =
   | "privacy-headers"
   | "cookies"
   | "accessibility"
+  | "seo"
+  | "performance"
+  | "conversion"
+  | "best-practices"
   | "soc2"
   | "ai-review"
   | "controlled-inspection"
@@ -340,6 +344,151 @@ function hasUnlabeledFormControl(html: string): boolean {
   });
 }
 
+// --- SEO / conversion / platform helpers (all from the single passive fetch) ---
+
+function pageTitle(html: string): string {
+  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  return m ? m[1].replace(/\s+/g, " ").trim() : "";
+}
+
+function metaByName(html: string, name: string): string | null {
+  const re = new RegExp(`<meta[^>]*\\bname\\s*=\\s*["']${name}["'][^>]*\\bcontent\\s*=\\s*["']([^"']*)["']`, "i");
+  const m = html.match(re);
+  return m ? m[1].trim() : null;
+}
+
+function hasMetaProperty(html: string, prop: string): boolean {
+  return new RegExp(`<meta[^>]*\\bproperty\\s*=\\s*["']${prop}["']`, "i").test(html);
+}
+
+function hasLinkRel(html: string, rel: string): boolean {
+  return new RegExp(`<link[^>]*\\brel\\s*=\\s*["'][^"']*${rel}[^"']*["']`, "i").test(html);
+}
+
+function hasJsonLd(html: string): boolean {
+  return /<script[^>]*type\s*=\s*["']application\/ld\+json["']/i.test(html);
+}
+
+function mixedContentResources(html: string): string[] {
+  const hits = [...html.matchAll(/\b(?:src|href)\s*=\s*["'](http:\/\/[^"']+)["']/gi)]
+    .map((m) => m[1])
+    // ignore plain anchor links to other http pages; flag loadable sub-resources
+    .filter((u) => /\.(?:js|css|png|jpe?g|gif|svg|webp|woff2?|ttf|ico|mp4|json)(?:\?|$)/i.test(u));
+  return Array.from(new Set(hits)).slice(0, 5);
+}
+
+function detectBuilder(html: string, headers: Record<string, string | string[]>): string | null {
+  const hay = (html + " " + JSON.stringify(headers)).toLowerCase();
+  if (/wixstatic|wix\.com|x-wix|_wixcss/.test(hay)) return "Wix";
+  if (/squarespace|sqsp\.net|static1\.squarespace/.test(hay)) return "Squarespace";
+  if (/cdn\.shopify|shopify/.test(hay)) return "Shopify";
+  if (/wp-content|wp-includes|wordpress/.test(hay)) return "WordPress";
+  if (/\.webflow\.|wf-|webflow/.test(hay)) return "Webflow";
+  if (/godaddy|mwp\.|websitebuilder/.test(hay)) return "GoDaddy Website Builder";
+  if (/weebly/.test(hay)) return "Weebly";
+  return null;
+}
+
+function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
+  const out: ScanFinding[] = [];
+  const html = input.html;
+  if (!html) return out;
+
+  // --- SEO ---
+  const title = pageTitle(html);
+  if (!title) {
+    out.push({ category: "seo", id: "seo-title-missing", severity: "high", title: "Page title is missing",
+      description: "The homepage has no <title> tag, which Google uses as the headline in search results.",
+      remediation: "Add a unique, descriptive <title> of about 50–60 characters." });
+  } else if (title.length < 15 || title.length > 65) {
+    out.push({ category: "seo", id: "seo-title-length", severity: "low", title: "Page title length is off",
+      description: `The title is ${title.length} characters; Google shows roughly 50–60 before truncating.`,
+      remediation: "Aim for a focused 50–60 character title that includes your business and location." });
+  }
+
+  if (!metaByName(html, "description")) {
+    out.push({ category: "seo", id: "seo-meta-description-missing", severity: "medium", title: "Meta description is missing",
+      description: "No meta description was found. Google often uses it as the snippet under your search result.",
+      remediation: "Add a compelling 140–160 character meta description with a call to action." });
+  }
+
+  if (!hasMetaProperty(html, "og:title") || !hasMetaProperty(html, "og:image")) {
+    out.push({ category: "seo", id: "seo-open-graph-missing", severity: "low", title: "Social sharing preview is incomplete",
+      description: "Open Graph tags (og:title/og:image) are missing, so links shared on Facebook, iMessage, and LinkedIn look plain or broken.",
+      remediation: "Add Open Graph and Twitter Card tags with a title, description, and preview image." });
+  }
+
+  if (!hasJsonLd(html)) {
+    out.push({ category: "seo", id: "seo-structured-data-missing", severity: "medium", title: "No local business structured data",
+      description: "No JSON-LD structured data was found. LocalBusiness schema helps you show up in Google Maps and local results with hours, address, and reviews.",
+      remediation: "Add LocalBusiness (or Organization) JSON-LD with your name, address, phone, and hours." });
+  }
+
+  if (!hasLinkRel(html, "canonical")) {
+    out.push({ category: "seo", id: "seo-canonical-missing", severity: "low", title: "Canonical URL is missing",
+      description: "No canonical link tag was found, which can cause duplicate-content confusion for search engines.",
+      remediation: "Add <link rel=\"canonical\"> pointing to the preferred URL of each page." });
+  }
+
+  if (!hasLinkRel(html, "icon")) {
+    out.push({ category: "best-practices", id: "favicon-missing", severity: "low", title: "Favicon is missing",
+      description: "No favicon was declared, so the site shows a blank icon in browser tabs and bookmarks.",
+      remediation: "Add a favicon link so your brand mark appears in tabs." });
+  }
+
+  // --- Mobile ---
+  if (!metaByName(html, "viewport")) {
+    out.push({ category: "best-practices", id: "viewport-missing", severity: "high", title: "Not mobile-optimized",
+      description: "No responsive viewport meta tag was found. The site likely renders zoomed-out and hard to use on phones — where most local traffic comes from.",
+      remediation: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> and verify the layout is responsive." });
+  }
+
+  // --- Conversion signals ---
+  const hasTel = /\bhref\s*=\s*["']tel:/i.test(html);
+  const hasMailto = /\bhref\s*=\s*["']mailto:/i.test(html);
+  const hasForm = /<form\b/i.test(html);
+  const hasBooking = /calendly|acuityscheduling|squareup\.com\/appointments|setmore|youcanbook|book[-_]?now|schedule/i.test(html);
+
+  if (!hasTel) {
+    out.push({ category: "conversion", id: "conversion-no-click-to-call", severity: "medium", title: "No click-to-call link",
+      description: "No tap-to-call (tel:) link was found. On mobile, a tappable phone number is one of the highest-converting elements a local business can have.",
+      remediation: "Make your phone number a tel: link so mobile visitors can call in one tap — and consider a 24/7 answering service so no call is missed." });
+  }
+  if (!hasForm && !hasMailto) {
+    out.push({ category: "conversion", id: "conversion-no-contact-path", severity: "high", title: "No clear way to get in touch",
+      description: "No contact form or email link was found on the homepage. Visitors who can't easily reach you usually leave.",
+      remediation: "Add a simple contact form and/or a visible email link above the fold." });
+  }
+  if (!hasBooking) {
+    out.push({ category: "conversion", id: "conversion-no-booking", severity: "low", title: "No online booking detected",
+      description: "No scheduling or booking link was found. Letting customers book themselves captures leads even after hours.",
+      remediation: "Add online scheduling (or an AI booking assistant) so visitors can book without calling during business hours." });
+  }
+
+  // --- Mixed content (only meaningful on HTTPS pages) ---
+  try {
+    if (new URL(input.finalUrl).protocol === "https:") {
+      const mixed = mixedContentResources(html);
+      if (mixed.length) {
+        out.push({ category: "security-headers", id: "mixed-content", severity: "medium", title: "Insecure (mixed) content loaded",
+          description: `The secure page loads ${mixed.length} resource(s) over plain http://, which browsers may block and which breaks the padlock.`,
+          evidence: mixed.join(", "),
+          remediation: "Load every script, style, image, and font over https://." });
+      }
+    }
+  } catch { /* ignore URL parse */ }
+
+  // --- Platform / build quality ---
+  const builder = detectBuilder(html, input.headers);
+  if (builder) {
+    out.push({ category: "best-practices", id: "diy-platform", severity: "low", title: `Built on ${builder}`,
+      description: `This site appears to run on ${builder}, a template builder. That's fine to start, but template sites are often slower, harder to optimize, and look like everyone else's.`,
+      remediation: "A custom-built site loads faster, ranks better, and gives your brand a distinct, professional presence." });
+  }
+
+  return out;
+}
+
 export function analyzePassive(input: PassiveAnalysisInput): PassiveAnalysisReport {
   const findings: ScanFinding[] = [];
   const initialUrl = new URL(input.initialUrl);
@@ -496,6 +645,9 @@ export function analyzePassive(input: PassiveAnalysisInput): PassiveAnalysisRepo
       title: "Form labels may be missing"
     });
   }
+
+  // SEO, conversion, mobile, mixed-content, and platform checks.
+  findings.push(...analyzeSeoConversion(input));
 
   return {
     finalUrl: input.finalUrl,

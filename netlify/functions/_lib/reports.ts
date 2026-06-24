@@ -16,7 +16,11 @@ export type PersistedReport = {
   workspaceId: string;
 };
 
-const severityScore = { high: 24, low: 5, medium: 12 } as const;
+// Start at 100; each issue deducts by severity. Tuned so the broad check set
+// spreads sites across a meaningful range (clean ~90-100, typical small-biz
+// ~45-70, rough sites ~15-40) instead of flooring everything at 0. The score
+// explainer modal documents these weights for users.
+const severityScore = { high: 10, low: 2, medium: 5 } as const;
 
 export function calculateRiskScore(findings: ScanFinding[]): number {
   const total = findings.reduce((acc, finding) => acc + severityScore[finding.severity], 0);
