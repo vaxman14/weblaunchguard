@@ -28,7 +28,7 @@ export function LegalPage({ children, onBack, title, updated }: LegalPageProps) 
       </main>
       <footer className="border-t border-line/80 bg-panel/70">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-6 py-6 text-sm text-muted sm:px-8">
-          <p>© 2026 CTFDigital. All rights reserved.</p>
+          <p>© 2026 CTF Designs. All rights reserved.</p>
           <p>Web Launch Guard</p>
         </div>
       </footer>

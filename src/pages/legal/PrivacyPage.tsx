@@ -8,7 +8,7 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
   return (
     <LegalPage title="Privacy Policy" updated="June 24, 2026" onBack={onBack}>
       <p>
-        Web Launch Guard ("Service", "we", "us") is operated by CTFDigital. This Privacy Policy explains what
+        Web Launch Guard ("Service", "we", "us") is operated by CTF Designs. This Privacy Policy explains what
         information we collect, how we use it, and your rights regarding that information. By using the Service
         you agree to these practices.
       </p>
@@ -61,7 +61,7 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
         We retain your account data for as long as your account is active. Scan reports are retained for 12
         months, after which they are archived or deleted. You may request deletion of your account and
         associated data by emailing{" "}
-        <a href="mailto:privacy@ctfdigital.store">privacy@ctfdigital.store</a>.
+        <a href="mailto:roman@ctfdesigns.com">roman@ctfdesigns.com</a>.
       </p>
 
       <h2>5. Your Rights (CCPA / GDPR)</h2>
@@ -74,7 +74,7 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
       </ul>
       <p>
         To exercise these rights, email{" "}
-        <a href="mailto:privacy@ctfdigital.store">privacy@ctfdigital.store</a>.
+        <a href="mailto:roman@ctfdesigns.com">roman@ctfdesigns.com</a>.
       </p>
 
       <h2>6. Cookies & Local Storage</h2>
@@ -110,7 +110,7 @@ export function PrivacyPage({ onBack }: PrivacyPageProps) {
 
       <h2>10. Contact</h2>
       <p>
-        CTFDigital · <a href="mailto:privacy@ctfdigital.store">privacy@ctfdigital.store</a>
+        CTF Designs · <a href="mailto:roman@ctfdesigns.com">roman@ctfdesigns.com</a>
       </p>
     </LegalPage>
   );

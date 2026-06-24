@@ -8,7 +8,7 @@ export function CookiePolicyPage({ onBack }: CookiePolicyPageProps) {
   return (
     <LegalPage title="Cookie Policy" updated="June 24, 2026" onBack={onBack}>
       <p>
-        This Cookie Policy explains how Web Launch Guard, operated by CTFDigital, uses cookies and
+        This Cookie Policy explains how Web Launch Guard, operated by CTF Designs, uses cookies and
         similar browser storage technologies. By using the Service you acknowledge this use.
       </p>
 
@@ -81,7 +81,7 @@ export function CookiePolicyPage({ onBack }: CookiePolicyPageProps) {
 
       <h2>9. Contact</h2>
       <p>
-        CTFDigital · <a href="mailto:privacy@ctfdigital.store">privacy@ctfdigital.store</a>
+        CTF Designs · <a href="mailto:roman@ctfdesigns.com">roman@ctfdesigns.com</a>
       </p>
     </LegalPage>
   );
