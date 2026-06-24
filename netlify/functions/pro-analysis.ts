@@ -3,7 +3,7 @@ import { AnthropicSetupError, generateProAnalysis } from "./_lib/anthropic";
 import { validateTargetUrl } from "./_lib/network";
 import { clientIpAddress, consumeRateLimit } from "./_lib/rate-limit";
 import { calculateRiskScore, persistReport } from "./_lib/reports";
-import { analyzePassive, fetchWithGuards, type ScanFinding } from "./_lib/scan-engine";
+import { analyzePassive, describeFetchError, fetchWithGuards, type ScanFinding } from "./_lib/scan-engine";
 import { generateSoc2Checklist } from "./_lib/soc2";
 import { findPersonalWorkspaceId, requireAuthenticatedUser, serverSupabaseClient } from "./_lib/supabase";
 import { attachReportToScanRun, isActiveSubscription, releaseScanSlot, reserveScanSlot } from "./_lib/quota";
@@ -201,11 +201,8 @@ export async function handler(event: NetlifyEvent) {
       homePage = await fetchWithGuards(targetUrl);
     } catch (fetchError) {
       await releaseScanSlot(client, reservation.runId);
-      if (fetchError instanceof Error && /public URL|Redirect target|Too many redirects|location|http or https/i.test(fetchError.message)) {
-        return errorResponse(fetchError.message, 400);
-      }
-
-      return errorResponse("Unable to fetch site.", 502);
+      const { message, status } = describeFetchError(fetchError);
+      return errorResponse(message, status);
     }
 
     if (new URL(homePage.finalUrl).hostname.toLowerCase() !== (domainRow.hostname as string).toLowerCase()) {

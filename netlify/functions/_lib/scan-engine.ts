@@ -86,6 +86,59 @@ export async function fetchWithGuards(url: URL): Promise<FetchedResponse> {
   throw new Error("Too many redirects.");
 }
 
+// Turn a fetch/DNS/TLS failure into a user-facing { status, message } so the
+// scan endpoints can explain *why* a site couldn't be scanned instead of always
+// saying "unable to fetch site".
+export function describeFetchError(err: unknown): { message: string; status: number } {
+  const code = (err as NodeJS.ErrnoException)?.code ?? "";
+  const msg = err instanceof Error ? err.message : "";
+
+  // Domain doesn't resolve — almost always a typo or an unpublished site.
+  if (code === "ENOTFOUND" || code === "EAI_AGAIN" || /ENOTFOUND|getaddrinfo|EAI_AGAIN/i.test(msg)) {
+    return {
+      message:
+        "We couldn't find that domain. Check the spelling and make sure it's a real, published website (for example, https://example.com).",
+      status: 400
+    };
+  }
+
+  // Validation rejected it before we ever connected (private/blocked host, bad scheme).
+  if (/public URL targets/i.test(msg)) {
+    return { message: "That address isn't a public website we can scan. Enter a public https:// URL.", status: 400 };
+  }
+  if (/http or https/i.test(msg)) {
+    return { message: "Only http and https websites can be scanned.", status: 400 };
+  }
+
+  // Redirect problems.
+  if (/Too many redirects/i.test(msg)) {
+    return { message: "That site redirected too many times. Try entering its exact final URL.", status: 400 };
+  }
+  if (/Redirect target must use|did not include a location/i.test(msg)) {
+    return { message: "That site sent a redirect we couldn't follow. Try entering the exact page URL.", status: 400 };
+  }
+
+  // Timeout.
+  if (code === "ETIMEDOUT" || /timed out|timeout/i.test(msg)) {
+    return {
+      message: "The site took too long to respond. It may be slow, overloaded, or blocking automated requests.",
+      status: 504
+    };
+  }
+
+  // Connection refused / reset / unreachable.
+  if (["ECONNREFUSED", "ECONNRESET", "EHOSTUNREACH", "ENETUNREACH", "EPIPE"].includes(code)) {
+    return { message: "We couldn't connect to that site. It may be down or blocking automated requests.", status: 502 };
+  }
+
+  // TLS / certificate problems.
+  if (/CERT|TLS|SSL|SELF_SIGNED|ALTNAME/i.test(code) || /certificate|self.signed|SSL|TLS/i.test(msg)) {
+    return { message: "The site has an SSL/TLS certificate problem we couldn't get past.", status: 502 };
+  }
+
+  return { message: "We couldn't reach that site. It may be down or blocking automated requests.", status: 502 };
+}
+
 function headerString(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
     return value[0];

@@ -2,7 +2,7 @@ import { errorResponse, jsonResponse, parseJsonBody, requireMethod, type Netlify
 import { validateTargetUrl } from "./_lib/network";
 import { clientIpAddress, consumeRateLimit } from "./_lib/rate-limit";
 import { calculateRiskScore } from "./_lib/reports";
-import { analyzePassive, fetchWithGuards, type ScanFinding } from "./_lib/scan-engine";
+import { analyzePassive, describeFetchError, fetchWithGuards, type ScanFinding } from "./_lib/scan-engine";
 import { serverSupabaseClient } from "./_lib/supabase";
 
 type DemoScanRequest = {
@@ -51,10 +51,8 @@ export async function handler(event: NetlifyEvent) {
   try {
     response = await fetchWithGuards(targetUrl);
   } catch (err) {
-    if (err instanceof Error && /public URL|Redirect target|Too many redirects|location|http or https/i.test(err.message)) {
-      return errorResponse(err.message, 400);
-    }
-    return errorResponse("Unable to fetch site.", 502);
+    const { message, status } = describeFetchError(err);
+    return errorResponse(message, status);
   }
 
   const passiveReport = analyzePassive({

@@ -2,7 +2,7 @@ import { errorResponse, jsonResponse, parseJsonBody, requireMethod, type Netlify
 import { validateTargetUrl } from "./_lib/network";
 import { clientIpAddress, consumeRateLimit } from "./_lib/rate-limit";
 import { calculateRiskScore, persistReport } from "./_lib/reports";
-import { analyzePassive, fetchWithGuards } from "./_lib/scan-engine";
+import { analyzePassive, describeFetchError, fetchWithGuards } from "./_lib/scan-engine";
 import { generateSoc2Checklist } from "./_lib/soc2";
 import { findPersonalWorkspaceId, requireAuthenticatedUser, serverSupabaseClient } from "./_lib/supabase";
 import { attachReportToScanRun, isActiveSubscription, releaseScanSlot, reserveScanSlot } from "./_lib/quota";
@@ -123,13 +123,9 @@ export async function handler(event: NetlifyEvent) {
     try {
       response = await fetchWithGuards(targetUrl);
     } catch (error) {
-      if (error instanceof Error && /public URL|Redirect target|Too many redirects|location|http or https/i.test(error.message)) {
-        await releaseScanSlot(client, reservation.runId);
-        return errorResponse(error.message, 400);
-      }
-
       await releaseScanSlot(client, reservation.runId);
-      return errorResponse("Unable to fetch site.", 502);
+      const { message, status } = describeFetchError(error);
+      return errorResponse(message, status);
     }
 
     const passiveReport = analyzePassive({
