@@ -27,24 +27,34 @@ export async function handler(event: NetlifyEvent) {
   const client = serverSupabaseClient();
   const ip = clientIpAddress(event);
 
+  // Owner/trusted IPs (comma-separated in DEMO_RATE_LIMIT_ALLOWLIST) bypass the
+  // demo cap entirely — lets Roman batch-test sites without signing up.
+  const allowlist = (process.env.DEMO_RATE_LIMIT_ALLOWLIST ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const exempt = allowlist.includes(ip);
+
   // Anonymous endpoint — brake per IP on both an hourly and a daily window so a
   // single caller can't use us as a free scanning proxy or run up our bandwidth.
-  const hourly = await consumeRateLimit(client, {
-    bucket: `ip:${ip}:demo-scan`,
-    limit: 5,
-    windowSeconds: 3600
-  });
-  if (!hourly.allowed) {
-    return errorResponse("Demo rate limit reached. Create a free account to keep scanning.", 429);
-  }
+  if (!exempt) {
+    const hourly = await consumeRateLimit(client, {
+      bucket: `ip:${ip}:demo-scan`,
+      limit: 5,
+      windowSeconds: 3600
+    });
+    if (!hourly.allowed) {
+      return errorResponse("Demo rate limit reached. Create a free account to keep scanning.", 429);
+    }
 
-  const daily = await consumeRateLimit(client, {
-    bucket: `ip:${ip}:demo-scan:day`,
-    limit: 25,
-    windowSeconds: 86400
-  });
-  if (!daily.allowed) {
-    return errorResponse("Daily demo limit reached. Create a free account to keep scanning.", 429);
+    const daily = await consumeRateLimit(client, {
+      bucket: `ip:${ip}:demo-scan:day`,
+      limit: 25,
+      windowSeconds: 86400
+    });
+    if (!daily.allowed) {
+      return errorResponse("Daily demo limit reached. Create a free account to keep scanning.", 429);
+    }
   }
 
   let response: Awaited<ReturnType<typeof fetchWithGuards>>;
