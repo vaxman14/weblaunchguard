@@ -395,10 +395,40 @@ function detectBuilder(html: string, headers: Record<string, string | string[]>)
   return null;
 }
 
+// Visible text with tags/scripts/styles stripped — used to detect empty SPA shells.
+function visibleText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// A client-rendered SPA serves a near-empty HTML shell (a root <div> + an
+// "enable JavaScript" notice); all real content is painted by JS after load.
+// Tools, crawlers, and link scrapers that don't run JS see nothing — so any
+// content-based finding from the shell is a false positive.
+export function isClientRenderedShell(html: string): boolean {
+  if (!html) return false;
+  const text = visibleText(html);
+  const hasAppRoot = /<div[^>]+id\s*=\s*["'](root|app|__next|__nuxt|gatsby-focus-wrapper)["']/i.test(html);
+  const noscriptHint = /enable javascript|you need to enable|please enable js/i.test(html);
+  return text.length < 250 && (hasAppRoot || noscriptHint);
+}
+
 function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
   const out: ScanFinding[] = [];
   const html = input.html;
   if (!html) return out;
+
+  const spaShell = isClientRenderedShell(html);
+  if (spaShell) {
+    out.push({ category: "best-practices", id: "client-side-rendered", severity: "high",
+      title: "Content is rendered entirely in the browser (no server-rendered HTML)",
+      description: "The page's HTML is an almost-empty shell — all content is drawn by JavaScript after the page loads. Search engines, social link-preview scrapers, and assistive tools that don't run JavaScript see a blank page, which hurts SEO and sharing. (Automated scanners can only read the shell, so some content checks below are skipped to avoid false alarms.)",
+      remediation: "Add server-side rendering (SSR) or static pre-rendering so the core content, headings, and contact details are present in the initial HTML." });
+  }
 
   // --- SEO ---
   const title = pageTitle(html);
@@ -457,7 +487,7 @@ function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
   // A link to a dedicated contact/get-in-touch page is also a valid contact path.
   const hasContactLink = /href\s*=\s*["'][^"']*(?:contact|get[-_ ]?in[-_ ]?touch|reach[-_ ]?us)[^"']*["']/i.test(html);
 
-  if (!hasTel && !input.htmlTruncated) {
+  if (!hasTel && !input.htmlTruncated && !spaShell) {
     out.push({ category: "conversion", id: "conversion-no-click-to-call", severity: "medium", title: "No click-to-call link",
       description: "No tap-to-call (tel:) link was found. On mobile, a tappable phone number is one of the highest-converting elements a local business can have.",
       remediation: "Make your phone number a tel: link so mobile visitors can call in one tap — and consider a 24/7 answering service so no call is missed." });
@@ -465,12 +495,12 @@ function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
   // Only claim "no contact path" if we actually read the whole page. On a truncated
   // fetch the contact info often lives in the footer we never reached — firing a HIGH
   // there is a false positive that destroys credibility with a prospect.
-  if (!hasForm && !hasMailto && !hasTel && !hasContactLink && !input.htmlTruncated) {
+  if (!hasForm && !hasMailto && !hasTel && !hasContactLink && !input.htmlTruncated && !spaShell) {
     out.push({ category: "conversion", id: "conversion-no-contact-path", severity: "high", title: "No clear way to get in touch",
       description: "No contact form, email link, tap-to-call number, or contact page was found. Visitors who can't easily reach you usually leave.",
       remediation: "Add a simple contact form, a visible email/phone link, or a clearly linked contact page above the fold." });
   }
-  if (!hasBooking) {
+  if (!hasBooking && !spaShell) {
     out.push({ category: "conversion", id: "conversion-no-booking", severity: "low", title: "No online booking detected",
       description: "No scheduling or booking link was found. Letting customers book themselves captures leads even after hours.",
       remediation: "Add online scheduling (or an AI booking assistant) so visitors can book without calling during business hours." });
@@ -624,7 +654,7 @@ export function analyzePassive(input: PassiveAnalysisInput): PassiveAnalysisRepo
     });
   }
 
-  if (input.html && !hasH1(input.html)) {
+  if (input.html && !hasH1(input.html) && !isClientRenderedShell(input.html)) {
     findings.push({
       category: "accessibility",
       description: "No h1 heading was detected in the returned HTML.",
