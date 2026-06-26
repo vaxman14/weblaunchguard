@@ -378,14 +378,20 @@ function mixedContentResources(html: string): string[] {
 }
 
 function detectBuilder(html: string, headers: Record<string, string | string[]>): string | null {
+  // Match real infrastructure fingerprints only — CDN hostnames, platform
+  // headers, asset hosts, and <meta generator> tags. Never match a bare brand
+  // word, which shows up in ordinary page copy (e.g. an agency listing the
+  // platforms it builds on) and produces false positives.
   const hay = (html + " " + JSON.stringify(headers)).toLowerCase();
-  if (/wixstatic|wix\.com|x-wix|_wixcss/.test(hay)) return "Wix";
-  if (/squarespace|sqsp\.net|static1\.squarespace/.test(hay)) return "Squarespace";
-  if (/cdn\.shopify|shopify/.test(hay)) return "Shopify";
-  if (/wp-content|wp-includes|wordpress/.test(hay)) return "WordPress";
-  if (/\.webflow\.|wf-|webflow/.test(hay)) return "Webflow";
-  if (/godaddy|mwp\.|websitebuilder/.test(hay)) return "GoDaddy Website Builder";
-  if (/weebly/.test(hay)) return "Weebly";
+  const generator = (metaByName(html, "generator") || "").toLowerCase();
+
+  if (/wixstatic\.com|parastorage\.com|x-wix-|_wixcss|wix-bolt/.test(hay) || generator.includes("wix")) return "Wix";
+  if (/static1\.squarespace\.com|sqsp\.net|squarespace\.com\/(?:universal|static)|squarespace_context/.test(hay) || generator.includes("squarespace")) return "Squarespace";
+  if (/cdn\.shopify\.com|myshopify\.com|x-shopify-|shopifycloud|shopify\.theme|window\.shopify/.test(hay) || generator.includes("shopify")) return "Shopify";
+  if (/wp-content\/|wp-includes\/|\/wp-json|x-wp-/.test(hay) || generator.includes("wordpress")) return "WordPress";
+  if (/assets(?:-global)?\.website-files\.com|\.webflow\.io|data-wf-(?:page|site)/.test(hay) || generator.includes("webflow")) return "Webflow";
+  if (/\.godaddysites\.com|img1?\.wsimg\.com/.test(hay) || generator.includes("godaddy")) return "GoDaddy Website Builder";
+  if (/\.weebly\.com|cdn2\.editmysite\.com/.test(hay) || generator.includes("weebly")) return "Weebly";
   return null;
 }
 
@@ -448,16 +454,18 @@ function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
   const hasMailto = /\bhref\s*=\s*["']mailto:/i.test(html);
   const hasForm = /<form\b/i.test(html);
   const hasBooking = /calendly|acuityscheduling|squareup\.com\/appointments|setmore|youcanbook|book[-_]?now|schedule/i.test(html);
+  // A link to a dedicated contact/get-in-touch page is also a valid contact path.
+  const hasContactLink = /href\s*=\s*["'][^"']*(?:contact|get[-_ ]?in[-_ ]?touch|reach[-_ ]?us)[^"']*["']/i.test(html);
 
   if (!hasTel) {
     out.push({ category: "conversion", id: "conversion-no-click-to-call", severity: "medium", title: "No click-to-call link",
       description: "No tap-to-call (tel:) link was found. On mobile, a tappable phone number is one of the highest-converting elements a local business can have.",
       remediation: "Make your phone number a tel: link so mobile visitors can call in one tap — and consider a 24/7 answering service so no call is missed." });
   }
-  if (!hasForm && !hasMailto) {
+  if (!hasForm && !hasMailto && !hasTel && !hasContactLink) {
     out.push({ category: "conversion", id: "conversion-no-contact-path", severity: "high", title: "No clear way to get in touch",
-      description: "No contact form or email link was found on the homepage. Visitors who can't easily reach you usually leave.",
-      remediation: "Add a simple contact form and/or a visible email link above the fold." });
+      description: "No contact form, email link, tap-to-call number, or contact page was found. Visitors who can't easily reach you usually leave.",
+      remediation: "Add a simple contact form, a visible email/phone link, or a clearly linked contact page above the fold." });
   }
   if (!hasBooking) {
     out.push({ category: "conversion", id: "conversion-no-booking", severity: "low", title: "No online booking detected",
