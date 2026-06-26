@@ -3,6 +3,7 @@ import { validateTargetUrl } from "./netlify/functions/_lib/network";
 import { analyzePassive, describeFetchError, fetchWithGuards } from "./netlify/functions/_lib/scan-engine";
 import { calculateRiskScore } from "./netlify/functions/_lib/reports";
 import { generateSoc2Checklist } from "./netlify/functions/_lib/soc2";
+import { fetchLighthouse } from "./netlify/functions/_lib/pagespeed";
 
 async function main() {
   const raw = process.argv[2];
@@ -25,6 +26,7 @@ async function main() {
   });
   const riskScore = calculateRiskScore(report.findings);
   const soc2 = generateSoc2Checklist(report.findings);
+  const lighthouse = await fetchLighthouse(report.finalUrl);
   const out = {
     initialUrl: target.toString(),
     finalUrl: report.finalUrl,
@@ -34,11 +36,17 @@ async function main() {
     riskScore,
     totalFindings: report.findings.length,
     findings: report.findings,
-    soc2
+    soc2,
+    lighthouse
   };
   writeFileSync("/tmp/wlg-scan.json", JSON.stringify(out, null, 2));
   const bySev: Record<string, number> = { high: 0, medium: 0, low: 0 };
   for (const f of report.findings) bySev[f.severity]++;
-  console.log(`OK ${report.finalUrl} | score=${riskScore} | findings=${report.findings.length} (high=${bySev.high} med=${bySev.medium} low=${bySev.low})`);
+  const lhBest = lighthouse?.mobile ?? lighthouse?.desktop ?? null;
+  const lhWhich = lighthouse?.mobile ? "mobile" : lighthouse?.desktop ? "desktop" : null;
+  const lh = lhBest
+    ? ` | lighthouse(${lhWhich}) perf=${lhBest.performance} a11y=${lhBest.accessibility} bp=${lhBest.bestPractices} seo=${lhBest.seo}`
+    : (process.env.PAGESPEED_API_KEY ? " | lighthouse=unavailable" : " | lighthouse=skipped(no PAGESPEED_API_KEY)");
+  console.log(`OK ${report.finalUrl} | score=${riskScore} | findings=${report.findings.length} (high=${bySev.high} med=${bySev.medium} low=${bySev.low})${lh}`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
