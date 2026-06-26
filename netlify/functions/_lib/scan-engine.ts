@@ -58,7 +58,7 @@ export type FetchedResponse = {
 };
 
 const timeoutMs = 7000;
-const htmlByteLimit = 250_000;
+const htmlByteLimit = 3_000_000;
 const maxRedirects = 5;
 
 // HTTP fetcher that re-resolves DNS on every redirect and binds the request
@@ -457,12 +457,15 @@ function analyzeSeoConversion(input: PassiveAnalysisInput): ScanFinding[] {
   // A link to a dedicated contact/get-in-touch page is also a valid contact path.
   const hasContactLink = /href\s*=\s*["'][^"']*(?:contact|get[-_ ]?in[-_ ]?touch|reach[-_ ]?us)[^"']*["']/i.test(html);
 
-  if (!hasTel) {
+  if (!hasTel && !input.htmlTruncated) {
     out.push({ category: "conversion", id: "conversion-no-click-to-call", severity: "medium", title: "No click-to-call link",
       description: "No tap-to-call (tel:) link was found. On mobile, a tappable phone number is one of the highest-converting elements a local business can have.",
       remediation: "Make your phone number a tel: link so mobile visitors can call in one tap — and consider a 24/7 answering service so no call is missed." });
   }
-  if (!hasForm && !hasMailto && !hasTel && !hasContactLink) {
+  // Only claim "no contact path" if we actually read the whole page. On a truncated
+  // fetch the contact info often lives in the footer we never reached — firing a HIGH
+  // there is a false positive that destroys credibility with a prospect.
+  if (!hasForm && !hasMailto && !hasTel && !hasContactLink && !input.htmlTruncated) {
     out.push({ category: "conversion", id: "conversion-no-contact-path", severity: "high", title: "No clear way to get in touch",
       description: "No contact form, email link, tap-to-call number, or contact page was found. Visitors who can't easily reach you usually leave.",
       remediation: "Add a simple contact form, a visible email/phone link, or a clearly linked contact page above the fold." });
