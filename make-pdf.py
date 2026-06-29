@@ -90,6 +90,43 @@ story.append(Spacer(1,6))
 story.append(Paragraph(f'{d["totalFindings"]} issues detected across security headers, transport, privacy, accessibility, SEO and best practices. '
                        f'A higher score is better (100 = clean). SOC 2 readiness: {d["soc2"]["passed"]} of {d["soc2"]["total"]} controls passing.', small))
 
+# ---- Lighthouse (Google PageSpeed) scores, if available
+lh = d.get("lighthouse") or {}
+def lh_color(v):
+    if v is None: return MUTE
+    return GREEN if v >= 90 else AMBER if v >= 50 else RED
+def lh_cell(label, v):
+    col = lh_color(v)
+    disp = "—" if v is None else str(v)
+    t = Table([[Paragraph(f'<para align="center"><font size=18 color="{col.hexval()}"><b>{disp}</b></font></para>', body)],
+               [Paragraph(f'<para align="center"><font size=7.5 color="#64748b">{label}</font></para>', body)]], colWidths=[1.15*inch])
+    t.setStyle(TableStyle([("BOX",(0,0),(-1,-1),1,LINE),("TOPPADDING",(0,0),(0,0),9),("BOTTOMPADDING",(0,1),(0,1),9)]))
+    return t
+def lh_row(strat, scores):
+    cells = [Paragraph(f'<font size=9 color="#334155"><b>{strat}</b></font>', body),
+             lh_cell("Performance", scores.get("performance")),
+             lh_cell("Accessibility", scores.get("accessibility")),
+             lh_cell("Best Practices", scores.get("bestPractices")),
+             lh_cell("SEO", scores.get("seo"))]
+    t = Table([cells], colWidths=[0.95*inch, 1.2*inch, 1.2*inch, 1.2*inch, 1.2*inch])
+    t.setStyle(TableStyle([("VALIGN",(0,0),(-1,-1),"MIDDLE"),("LEFTPADDING",(0,0),(0,0),0),("RIGHTPADDING",(1,0),(-1,0),6)]))
+    return t
+if lh.get("mobile") or lh.get("desktop"):
+    story.append(Paragraph("Google Lighthouse Scores", h2))
+    story.append(Paragraph("Real Lighthouse audit via Google PageSpeed Insights (rendered page). 90+ green, 50–89 needs work, under 50 poor.", small))
+    story.append(Spacer(1,6))
+    if lh.get("mobile"):
+        story.append(lh_row("Mobile", lh["mobile"])); story.append(Spacer(1,5))
+    if lh.get("desktop"):
+        story.append(lh_row("Desktop", lh["desktop"])); story.append(Spacer(1,5))
+    m = lh.get("mobile") or {}
+    vitals = []
+    if m.get("lcpSeconds") is not None: vitals.append(f'LCP {m["lcpSeconds"]}s')
+    if m.get("cls") is not None: vitals.append(f'CLS {m["cls"]}')
+    if m.get("tbtMs") is not None: vitals.append(f'TBT {m["tbtMs"]}ms')
+    if vitals:
+        story.append(Paragraph(f'<font color="#64748b">Core Web Vitals (mobile): {" · ".join(vitals)}</font>', small))
+
 # ---- Findings
 story.append(Paragraph("Findings", h2))
 rank = {"high":0,"medium":1,"low":2}

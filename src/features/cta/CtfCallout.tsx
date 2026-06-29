@@ -16,11 +16,11 @@ export function CtfCallout({ hasFindings = true }: CtfCalloutProps) {
   return (
     <Card className="border-accent/40 bg-accent/5 p-6">
       <h3 className="text-lg font-semibold text-ink">
-        {hasFindings ? "Want these issues fixed for you?" : "Want a faster, safer, more compliant site?"}
+        {hasFindings ? "Want these issues fixed for you?" : "Want a faster, safer, better-built site?"}
       </h3>
       <p className="mt-2 text-sm leading-6 text-muted">
         Web Launch Guard is a free tool built by CTF Designs. We design and rebuild fast, secure,
-        ADA-compliant websites — and we can fix everything this scan flagged. No obligation, just a look.
+        modern websites — and we can fix everything this scan flagged. No obligation, just a look.
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <Button onClick={() => window.open(CTF_CONTACT, "_blank", "noopener,noreferrer")}>
