@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { A11yWidget } from "./features/a11y/A11yWidget";
 import { CookieBanner } from "./features/cookies/CookieBanner";
 import { ThemeProvider } from "./lib/theme";
 import { HomePage } from "./pages/HomePage";
@@ -27,16 +26,15 @@ function AppContent() {
     window.location.hash = "";
   }
 
-  if (hash === "#privacy") return <><PrivacyPage onBack={goBack} /><A11yWidget /></>;
-  if (hash === "#terms") return <><TermsPage onBack={goBack} /><A11yWidget /></>;
-  if (hash === "#eula") return <><EulaPage onBack={goBack} /><A11yWidget /></>;
-  if (hash === "#cookies") return <><CookiePolicyPage onBack={goBack} /><A11yWidget /></>;
+  if (hash === "#privacy") return <PrivacyPage onBack={goBack} />;
+  if (hash === "#terms") return <TermsPage onBack={goBack} />;
+  if (hash === "#eula") return <EulaPage onBack={goBack} />;
+  if (hash === "#cookies") return <CookiePolicyPage onBack={goBack} />;
 
   return (
     <div className="min-h-screen bg-page text-ink">
       <HomePage />
       <CookieBanner />
-      <A11yWidget />
     </div>
   );
 }
