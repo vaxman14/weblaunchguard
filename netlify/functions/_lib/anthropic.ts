@@ -119,7 +119,7 @@ export async function generateFixPlan(input: {
   const key = process.env.GROQ_API_KEY?.trim();
   if (!key || input.findings.length === 0) return null;
   const client = new Groq({ apiKey: key });
-  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const model = process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
 
   const system = [
     "You are a senior consultant at CTF Designs, a web design and digital marketing studio.",
@@ -205,7 +205,7 @@ export async function generateProAnalysis(input: {
   };
 
   const client = anthropicClient();
-  const model = process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile";
+  const model = process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b";
 
   const response = await client.chat.completions.create({
     model,
